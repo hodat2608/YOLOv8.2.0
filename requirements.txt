@@ -68,7 +68,7 @@ fsspec==2023.10.0
 gdown==4.7.1
 gitdb==4.0.11
 GitPython==3.1.43
-google-api-core==2.14.0
+google-api-core==2.19.1
 google-api-python-client==2.109.0
 google-auth==2.25.1
 google-auth-httplib2==0.1.1
