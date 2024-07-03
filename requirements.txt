@@ -23,7 +23,7 @@ click-plugins==1.1.1
 click-repl==0.3.0
 colorama==0.4.6
 coloredlogs==15.0.1
-comet-ml==3.42.0
+comet-ml==3.43.2
 configobj==5.0.8
 constantly==23.10.4
 contourpy==1.1.0
