@@ -1,0 +1,4 @@
+train: C:/Users/CCSX009/Documents/ultralytics/datasets/split/train/images
+val: C:/Users/CCSX009/Documents/ultralytics/datasets/split/valid/images
+nc: 17
+names: ['cacbon', 'tay_choi', 'chau_dien', 'bui_chi', 'hat_chi', 'vun_chi', 'chi_dinh_thanh_de', 'di_vat', 'thanh_de', 'me_thanh_de', '1', '2', '3', '4', '5', '6', '7']
