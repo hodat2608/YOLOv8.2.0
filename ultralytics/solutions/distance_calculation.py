@@ -1,5 +1,9 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
-
+import sys
+from pathlib import Path
+current_dir = Path(__file__).resolve().parent.parent.parent
+ultralytics_main_dir = current_dir
+sys.path.append(str(ultralytics_main_dir))
 import math
 
 import cv2

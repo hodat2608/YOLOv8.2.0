@@ -306,7 +306,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         label_size_model = ttk.Label(Frame_1, text='2. Size Model', font=('Segoe UI', 12))
         label_size_model.grid(row=5, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
-        options = [468, 608, 832]
+        options = [468, 608, 768]
         self.size_model = ttk.Combobox(Frame_1, values=options, width=7)
         self.size_model.grid(row=6, column=0, columnspan=2, padx=30, pady=5, sticky="nws", ipadx=5, ipady=2)
         self.size_model.set(608)
