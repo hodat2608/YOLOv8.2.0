@@ -332,6 +332,22 @@ class Annotator:
                     lineType=cv2.LINE_AA,
                 )
 
+    def export_coordinates(self, im, boxes, red=(0, 255, 0), green=(255, 0, 0),arrow_length = 20,thicknes = 2,tipLength=0.5):
+        prev_point = None
+        for box in boxes:
+            current_point = (int(round(box[0])), int(round(box[1])))
+            cv2.circle(im, (int(round(box[0])), int(round(box[1]))), radius=5, color=(0, 0, 255), thickness=thicknes)
+            cv2.arrowedLine(im, (int(round(box[0])), int(round(box[1]))), (int(round(box[0])) - arrow_length, int(round(box[1]))), color=red, thickness=thicknes, tipLength=tipLength)
+            cv2.arrowedLine(im, (int(round(box[0])), int(round(box[1]))), (int(round(box[0])), int(round(box[1])) - arrow_length), color=green, thickness=thicknes, tipLength=tipLength)
+            cv2.putText(im, f"({int(round(box[0]))}, {int(round(box[1]))})", (int(round(box[0])) + 10, int(round(box[1])) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            if prev_point is not None:
+                cv2.line(im, prev_point, current_point, (0, 0, 255), 2)  # Vẽ đường màu đỏ
+                print(prev_point, current_point)
+
+        # Cập nhật điểm hiện tại thành điểm trước đó cho vòng lặp tiếp theo
+            prev_point = current_point
+        return im
+    
     def masks(self, masks, colors, im_gpu, alpha=0.5, retina_masks=False):
         """
         Plot masks on image.

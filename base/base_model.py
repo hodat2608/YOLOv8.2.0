@@ -7,31 +7,26 @@ from ultralytics import YOLO
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import glob
-import torch
 import mysql.connector
 from tkinter import messagebox,simpledialog
 import threading
-# import stapipy as st
 import numpy as np
-import concurrent.futures
-import cv2
-import socket
 import time
-from PIL import Image,ImageTk
 from yaml import load
 import socket
 from udp import UDPFinsConnection
 from initialization import FinsPLCMemoryAreas
-import time
-from tkinter import messagebox
 import tkinter as tk
 import shutil
-from pathlib import Path
-import sys
 import os
-
 soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+from collections import defaultdict
+import cv2
+from ultralytics.utils.files import increment_path
+import supervision as sv
+from collections import deque
+from ultralytics.utils.plotting import Annotator, colors
+import torch
 def removefile():
     directory1 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg'
     directory2 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera2/*.jpg'
@@ -53,14 +48,14 @@ class MySQL_Connection():
         self.passwd = passwd
         self.database = database
 
-    def Connect_MySQLServer(self):
-            db_connection = mysql.connector.connect(
-            host= self.host,
-            user=self.user, 
-            passwd=self.passwd,
-            database=self.database)                    
-            cursor = db_connection.cursor()
-            return cursor,db_connection
+    # def Connect_MySQLServer(self):
+    #         db_connection = mysql.connector.connect(
+    #         host= self.host,
+    #         user=self.user, 
+    #         passwd=self.passwd,
+    #         database=self.database)     
+    #         cursor = db_connection.cursor()
+    #         return cursor,db_connection
 
     def check_connection(self):
         _,db_connection = self.Connect_MySQLServer()
@@ -90,6 +85,22 @@ class MySQL_Connection():
             database=database)                    
             cursor = db_connection.cursor()
             return cursor,db_connection
+    
+    def Connect_MySQLServer(self):
+        try:
+            db_connection = mysql.connector.connect(
+                host=self.host,
+                database=self.database,
+                user=self.user,
+                password=self.passwd
+            )
+            if db_connection.is_connected():
+                print("Successfully connected to the database")
+                cursor = db_connection.cursor(dictionary=True)
+                return cursor, db_connection
+        except Exception as e:
+            print(f"Error: {e}")
+            return None, None
       
 
 class PLC_Connection():
@@ -197,12 +208,12 @@ class Base:
         self.scale_conf_all = None
         self.size_model = None
         self.item_code = []
-        self.make_cls_var = []
+        self.make_cls_var = False
         self.permisson_btn = []
         self.model = None
         self.time_processing_output = None
         self.result_detection = None
-    
+
     def connect_database(self):
         cursor, db_connection  = self.database.Connect_MySQLServer()
         check_connection = self.database.check_connection()
@@ -224,6 +235,7 @@ class Base:
             try:
                 weight = self.weights.get()
                 confidence_all = int(self.scale_conf_all.get())
+                size_model = int(self.size_model.get())
                 item_code_value = str(self.item_code.get())
                 cursor.execute(f"DELETE FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
                 for i1 in range(len(self.model_name_labels)):
@@ -241,35 +253,20 @@ class Base:
                     query_sql = f"""
                     INSERT INTO {self.name_table}
                     (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
-                    height_min, height_max, PLC_value, cmpnt_conf)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    height_min, height_max, PLC_value, cmpnt_conf, size_detection)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     values = (item_code_value, weight, confidence_all, label_name, join_detect, OK_jont, NG_jont, num_labels, 
-                            width_min, width_max, height_min, height_max, PLC_value, cmpnt_conf)
+                            width_min, width_max, height_min, height_max, PLC_value, cmpnt_conf,size_model)
                     cursor.execute(query_sql,values)
                 db_connection.commit()
                 cursor.close()
                 db_connection.close()
                 messagebox.showinfo("Notification", "Saved parameters successfully!")
-                model_settings = []
-                for i1 in range(len(self.model_name_labels)):
-                    model_settings.append({
-                        'label_name':  self.model_name_labels[i1].cget("text"),
-                        'join_detect': self.join[i1].get(),
-                        'OK_jont': self.ok_vars[i1].get(),
-                        'NG_jont': self.ng_vars[i1].get(),
-                        'num_labels': int(self.num_inputs[i1].get()),
-                        'width_min': int(self.wn_inputs[i1].get()),
-                        'width_max': int(self.wx_inputs[i1].get()),
-                        'height_min': int(self.hn_inputs[i1].get()),
-                        'height_max': int(self.hx_inputs[i1].get()),
-                        'PLC_value': int(self.plc_inputs[i1].get()),
-                        'cmpnt_conf': int(self.conf_scales[i1].get()),
-                    })
             except Exception as e:
                 cursor.close()
                 db_connection.close()
-                messagebox.showinfo("Notification", f"Data saved failed! Error: {str(e)}")
+                messagebox.showerror("Error", f"Data saved failed! Error: {str(e)}")
         else:
             pass
 
@@ -301,7 +298,7 @@ class Base:
         allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
         for xywh, cls, conf in zip(xywh_list, cls_list, conf_list):
             setting = settings_dict[results[0].names[int(cls)]]
-            if setting:                                       
+            if setting:
                 if setting['join_detect']:
                     if xywh[2] < setting['width_min'] or xywh[2] > setting['width_max'] \
                             or xywh[3] < setting['height_min'] or xywh[3] > setting['height_max'] \
@@ -323,7 +320,7 @@ class Base:
         if not ok_variable:
             results_detect = 'OK'
 
-        show_img = np.squeeze(results[0].extract_np(list_remove=list_remove))
+        show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
         show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
         return output_image, results_detect, list_label_ng
@@ -331,15 +328,16 @@ class Base:
     
     def load_data_model(self):
         cursor, db_connection,_,_ = self.connect_database()
+        print(self.name_table)
         cursor.execute(f"SELECT * FROM {self.name_table} WHERE item_code = %s", (self.item_code_cfg,))
         records = cursor.fetchall()
         cursor.close()
         db_connection.close()
         if records:
             first_record = records[0]
-            load_item_code = first_record[1]
-            load_path_weight = first_record[2]
-            load_confidence_all_scale = first_record[3]
+            load_item_code = first_record['item_code']
+            load_path_weight = first_record['weight']
+            load_confidence_all_scale = first_record['confidence_all']
         return records,load_path_weight,load_item_code,load_confidence_all_scale
 
     def load_parameters_model(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records):
@@ -348,36 +346,29 @@ class Base:
         self.item_code.delete(0, tk.END)
         self.item_code.insert(0, load_item_code)
         self.scale_conf_all.set(load_confidence_all_scale)
-        for i1 in range(len(model1.names)):
-            for record in records:
-                if record[4] == model1.names[i1]:
+        try:
+            for i1 in range(len(model1.names)):          
+                for record in records:                
+                    if record['label_name'] == model1.names[i1]:
+                        self.join[i1].set(bool(record['join_detect']))
+                        self.ok_vars[i1].set(bool(record['OK']))
+                        self.ng_vars[i1].set(bool(record['NG']))
+                        self.num_inputs[i1].delete(0, tk.END)
+                        self.num_inputs[i1].insert(0, record['num_labels'])
+                        self.wn_inputs[i1].delete(0, tk.END)
+                        self.wn_inputs[i1].insert(0, record['width_min'])
+                        self.wx_inputs[i1].delete(0, tk.END)
+                        self.wx_inputs[i1].insert(0, record['width_max'])
+                        self.hn_inputs[i1].delete(0, tk.END)
+                        self.hn_inputs[i1].insert(0, record['height_min'])                
+                        self.hx_inputs[i1].delete(0, tk.END)
+                        self.hx_inputs[i1].insert(0, record['height_max'])
+                        self.plc_inputs[i1].delete(0, tk.END)
+                        self.plc_inputs[i1].insert(0, record['PLC_value'])
+                        self.conf_scales[i1].set(record['cmpnt_conf'])
+        except IndexError as e:
+            messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
-                    self.join[i1].set(bool(record[5]))
-
-                    self.ok_vars[i1].set(bool(record[6]))
-
-                    self.ng_vars[i1].set(bool(record[7]))
-
-                    self.num_inputs[i1].delete(0, tk.END)
-                    self.num_inputs[i1].insert(0, record[8])
-
-                    self.wn_inputs[i1].delete(0, tk.END)
-                    self.wn_inputs[i1].insert(0, record[9])
-
-                    self.wx_inputs[i1].delete(0, tk.END)
-                    self.wx_inputs[i1].insert(0, record[10])
-
-                    self.hn_inputs[i1].delete(0, tk.END)
-                    self.hn_inputs[i1].insert(0, record[11])
-                    
-                    self.hx_inputs[i1].delete(0, tk.END)
-                    self.hx_inputs[i1].insert(0, record[12])
-
-                    self.plc_inputs[i1].delete(0, tk.END)
-                    self.plc_inputs[i1].insert(0, record[13])
-
-                    self.conf_scales[i1].set(record[14])
-        
     def change_model(self,Frame_2):
         selected_file = filedialog.askopenfilename(title="Choose a file", filetypes=[("Model Files", "*.pt")])
         if selected_file:
@@ -395,9 +386,9 @@ class Base:
         weight = self.weights.get()
         item_code_value = str(self.item_code.get())
         cursor, db_connection,_,_ = self.connect_database()
-        cursor.execute("SELECT * FROM test_model_cam1_model1 WHERE item_code = %s", (item_code_value,))
+        cursor.execute(f"SELECT * FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
         records = cursor.fetchall()
-        model = torch.hub.load('C:/Users/CCSX009/Documents/yolov5','custom', path=weight, source='local', force_reload=False)
+        model = YOLO(weight)
         cursor.close()
         db_connection.close()
         return records,model
@@ -407,34 +398,35 @@ class Base:
         if confirm_load_parameters:
             records, model = self.load_params_child()
             try:
-                for i1 in range(len(model.names)):
-                    for record in records:
-                        if record[4] == model.names[i1]:
-                            self.join[i1].set(bool(record[5]))
-                            self.ok_vars[i1].set(bool(record[6]))
-                            self.ng_vars[i1].set(bool(record[7]))
+                for i1 in range(len(model.names)):          
+                    for record in records:                
+                        if record['label_name'] == model.names[i1]:
+                            self.join[i1].set(bool(record['join_detect']))
+                            self.ok_vars[i1].set(bool(record['OK']))
+                            self.ng_vars[i1].set(bool(record['NG']))
                             self.num_inputs[i1].delete(0, tk.END)
-                            self.num_inputs[i1].insert(0, record[8])
+                            self.num_inputs[i1].insert(0, record['num_labels'])
                             self.wn_inputs[i1].delete(0, tk.END)
-                            self.wn_inputs[i1].insert(0, record[9])
+                            self.wn_inputs[i1].insert(0, record['width_min'])
                             self.wx_inputs[i1].delete(0, tk.END)
-                            self.wx_inputs[i1].insert(0, record[10])
+                            self.wx_inputs[i1].insert(0, record['width_max'])
                             self.hn_inputs[i1].delete(0, tk.END)
-                            self.hn_inputs[i1].insert(0, record[11])
+                            self.hn_inputs[i1].insert(0, record['height_min'])                
                             self.hx_inputs[i1].delete(0, tk.END)
-                            self.hx_inputs[i1].insert(0, record[12])
+                            self.hx_inputs[i1].insert(0, record['height_max'])
                             self.plc_inputs[i1].delete(0, tk.END)
-                            self.plc_inputs[i1].insert(0, record[13])
-                            self.conf_scales[i1].set(record[14])
+                            self.plc_inputs[i1].insert(0, record['PLC_value'])
+                            self.conf_scales[i1].set(record['cmpnt_conf'])
             except IndexError as e:
-                print(f"Error loading parameters: {e}")
-            except Exception as e:
-                print(f"Unexpected error: {e}")
+                messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
-    def handle_image(self,img1_orgin, width, height,camera_frame):
+    def handle_image(self,img1_orgin, width, height,camera_frame,cls):
+        t1 = time.time()
         for widget in camera_frame.winfo_children():
             widget.destroy()
-        image_result,time_processing,results_detect,label_ng = self.processing_handle_image_local(img1_orgin, width, height,cls=self.make_cls_var.get())
+        image_result,results_detect,label_ng = self.processing_handle_image_local(img1_orgin, width, height,clss=cls)
+        t2 = time.time() - t1
+        time_processing = str(int(t2*1000)) + 'ms'
         img_pil = Image.fromarray(image_result)
         photo = ImageTk.PhotoImage(img_pil)
         canvas = tk.Canvas(camera_frame, width=width, height=height)
@@ -448,9 +440,8 @@ class Base:
         else:
             label_ng = ','.join(label_ng)
             canvas.create_text(10, 70, anchor=tk.NW, text=f'Label: {label_ng}', fill='red', font=('Segoe UI', 20))
-        return results_detect       
+        return results_detect  
     
-
     def detect_single_img(self, camera_frame):
         selected_file = filedialog.askopenfilename(title="Choose a file", filetypes=[("Image Files", "*.jpg *.jpeg *.png")])
         if selected_file:
@@ -458,7 +449,8 @@ class Base:
                 widget.destroy()
             width = 480
             height = 450
-            self.handle_image(selected_file, width, height,camera_frame)
+            cls = True if self.make_cls_var.get() else False
+            self.handle_image(selected_file, width, height,camera_frame,cls)
         else: 
             pass
            
@@ -480,7 +472,8 @@ class Base:
         width = 480
         height = 450
         image_path = self.image_files[index]
-        self.handle_image(image_path, width, height,camera_frame)
+        cls = True if self.make_cls_var.get() else False
+        self.handle_image(image_path, width, height,camera_frame,cls)
 
     def detect_next_img(self,camera_frame):
         if self.current_image_index < len(self.image_files) - 1:
@@ -512,7 +505,8 @@ class Base:
                     self.image_path_mks_cls = self.selected_folder_detect_auto[self.image_index]
                     width = 480
                     height = 450
-                    self.results_detect = self.handle_image(self.image_path_mks_cls, width, height,camera_frame)
+                    cls = True if self.make_cls_var.get() else False
+                    self.results_detect = self.handle_image(self.image_path_mks_cls, width, height,camera_frame,cls)
                     self.image_index += 1
                     self.camera_frame.after(500, process_next_image)
                 else:
@@ -609,7 +603,7 @@ class Base:
                     height_result = float(param[3])*1600
                     for setting in model_settings:
                         if results.names[int(number_label)] == setting['label_name']:
-                            if setting['join_detect']:
+                            if setting['join_detect']: 
                                 if width_result < setting['width_min'] or width_result > setting['width_max'] \
                                         or height_result < setting['height_min'] or height_result > setting['height_max'] \
                                         or conf_result < setting['cmpnt_conf']: 
@@ -625,17 +619,12 @@ class Base:
     def classify_imgs(self):
         pass    
 
-    def processing_handle_image_local(self,input_image_original,width,height,cls=False):
-        label_remove = []
+    def processing_handle_image_local(self,input_image_original,width,height,clss=False):
         size_model_all = int(self.size_model.get())
-        conf_all = int(self.scale_conf_all.get())/100
-        t1 = time.time()
-        results = self.model(input_image_original,size_model_all,conf_all)
-        table_results = results.pandas().xyxy[0]
-        model_names = self.model.names
-        model_settings = []
-        for i1 in range(len(self.model_name_labels)):
-            model_settings.append({
+        conf_all = int(self.scale_conf_all.get()) / 100
+        results = self.model(input_image_original,imgsz=size_model_all,conf=conf_all)
+        model_settings = [
+            {
                 'label_name':  self.model_name_labels[i1].cget("text"),
                 'join_detect': self.join[i1].get(),
                 'OK_jont': self.ok_vars[i1].get(),
@@ -647,48 +636,262 @@ class Base:
                 'height_max': int(self.hx_inputs[i1].get()),
                 'PLC_value': int(self.plc_inputs[i1].get()),
                 'cmpnt_conf': int(self.conf_scales[i1].get()),
-            })
-        for i in range(len(table_results.index)):
-            width_result = table_results['xmax'][i] - table_results['xmin'][i]
-            height_result = table_results['ymax'][i] - table_results['ymin'][i]
-            conf_result = table_results['confidence'][i] * 100
-            label_name_tables_result = table_results['name'][i]
-            for i1 in range(len(model_names)):
-                for setting in model_settings:
-                    if label_name_tables_result == model_names[i1] == setting['label_name']:
-                        if setting['join_detect']:
-                            if width_result < setting['width_min'] or width_result > setting['width_max'] \
-                                    or height_result < setting['height_min'] or height_result > setting['height_max'] \
-                                    or conf_result < setting['cmpnt_conf']:
-                                label_remove.append(i)
-                        else:
-                            label_remove.append(i)
-        table_results.drop(index=label_remove, inplace=True)   
-        name_rest = list(table_results['name'])                
-        results_detect = 'ERROR'
-        ok_variable = False
-        list_label_ng = []
-        for i1 in range(len(model_names)):
-            for j1 in model_settings:
-                if model_names[i1] == j1['label_name']:
-                    if j1['join_detect']:
-                        if j1['OK_jont']:
-                            number_of_labels = name_rest.count(model_names[i1])
-                            if number_of_labels != j1['num_labels']:
-                                results_detect = 'NG'
-                                ok_variable = True
-                                list_label_ng.append(model_names[i1])
-                        if j1['NG_jont']:
-                            if j1['label_name'] in name_rest:
-                                results_detect = 'NG'
-                                ok_variable = True
-                                list_label_ng.append(model_names[i1])
+            }
+            for i1 in range(len(self.model_name_labels))
+        ]
+        settings_dict = {setting['label_name']: setting for setting in model_settings}
+        boxes_dict = results[0].boxes.cpu().numpy()
+        xywh_list = boxes_dict.xywh.tolist()
+        cls_list = boxes_dict.cls.tolist()
+        conf_list = boxes_dict.conf.tolist()
+        allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
+        for xywh, cls, conf in zip(xywh_list, cls_list, conf_list):
+            setting = settings_dict[results[0].names[int(cls)]]
+            if setting:                                       
+                if setting['join_detect']:
+                    if xywh[2] < setting['width_min'] or xywh[2] > setting['width_max'] \
+                            or xywh[3] < setting['height_min'] or xywh[3] > setting['height_max'] \
+                            or int(conf*100) < setting['cmpnt_conf']:
+                        list_remove.append(int(cls))
+                        continue
+                    allowed_classes.append(results[0].names[int(cls)])
+                else:
+                    list_remove.append(int(cls))           
+        for model_name,setting in settings_dict.items():
+            if setting['join_detect'] and setting['OK_jont']:
+                if allowed_classes.count(setting['label_name']) != setting['num_labels']:
+                    results_detect,ok_variable = 'NG',True
+                    list_label_ng.append(model_name)
+            if setting['join_detect'] and setting['NG_jont']:
+                if model_name in allowed_classes:
+                    results_detect,ok_variable = 'NG',True
+                    list_label_ng.append(setting['label_name'])
         if not ok_variable:
             results_detect = 'OK'
-        show_img = np.squeeze(results.render(label_remove))
-        show_img = cv2.resize(show_img, (width,height), interpolation=cv2.INTER_AREA)
-        t2 = time.time() - t1
-        time_processing = str(int(t2*1000)) + 'ms'
-        if cls:
+        if clss:
             self._make_cls(input_image_original,results,model_settings)
-        return show_img,time_processing,results_detect,list_label_ng
+        show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
+        show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
+        output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
+        return output_image, results_detect, list_label_ng
+    
+class base_handle_video(PLC_Connection,MySQL_Connection):
+
+    def __init__(self):
+        self.database = MySQL_Connection(None,None,None,None) 
+        self.name_table = None
+        self.item_code_cfg = None
+        self.image_files = []
+        self.current_image_index = 0
+        self.state = 0
+        self.password = " "
+        self.lockable_widgets = [] 
+        self.lock_params = []
+        self.model_name_labels = []
+        self.join = []
+        self.ok_vars = []
+        self.ng_vars = []
+        self.num_inputs = []
+        self.wn_inputs = []
+        self.wx_inputs = []
+        self.hn_inputs = []
+        self.hx_inputs = []
+        self.plc_inputs = []
+        self.conf_scales = []
+        self.widgets_option_layout_parameters = []
+        self.row_widgets = []
+        self.weights = None
+        self.scale_conf_all = None
+        self.size_model = None
+        self.item_code = []
+        self.make_cls_var = False
+        self.permisson_btn = []
+        self.model = None
+        self.time_processing_output = None
+        self.result_detection = None
+
+    def connect_database(self):
+        cursor, db_connection  = self.database.Connect_MySQLServer()
+        check_connection = self.database.check_connection()
+        reconnect = self.database.reconnect()
+        return cursor,db_connection,check_connection,reconnect
+    
+    def load_data_model_vid(self):
+        cursor, db_connection,_,_ = self.connect_database()
+        print(self.name_table)
+        cursor.execute(f"SELECT * FROM {self.name_table} WHERE item_code = %s", (self.item_code_cfg,))
+        records = cursor.fetchall()
+        cursor.close()
+        db_connection.close()
+        if records:
+            first_record = records[0]
+            load_item_code = first_record['item_code']
+            load_path_weight = first_record['weight']
+            load_confidence_all_scale = first_record['confidence_all']
+        else: 
+            first_record = None
+            load_item_code = None
+            load_path_weight = None
+            load_confidence_all_scale = None
+
+        return records,load_path_weight,load_item_code,load_confidence_all_scale
+
+    def load_parameters_model_vid(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records):
+        self.weights.delete(0, tk.END)
+        self.weights.insert(0, load_path_weight)
+        try:
+            self.item_code.delete(0, tk.END)
+            self.item_code.insert(0, load_item_code)
+            self.scale_conf_all.set(load_confidence_all_scale)
+        except: 
+            pass
+        try:
+            for i1 in range(len(model1.names)):          
+                for record in records:                
+                    if record['label_name'] == model1.names[i1]:
+                        self.join[i1].set(bool(record['join_detect']))
+                        self.ok_vars[i1].set(bool(record['OK']))
+                        self.ng_vars[i1].set(bool(record['NG']))
+                        self.num_inputs[i1].delete(0, tk.END)
+                        self.num_inputs[i1].insert(0, record['num_labels'])
+                        self.wn_inputs[i1].delete(0, tk.END)
+                        self.wn_inputs[i1].insert(0, record['width_min'])
+                        self.wx_inputs[i1].delete(0, tk.END)
+                        self.wx_inputs[i1].insert(0, record['width_max'])
+                        self.hn_inputs[i1].delete(0, tk.END)
+                        self.hn_inputs[i1].insert(0, record['height_min'])                
+                        self.hx_inputs[i1].delete(0, tk.END)
+                        self.hx_inputs[i1].insert(0, record['height_max'])
+                        self.plc_inputs[i1].delete(0, tk.END)
+                        self.plc_inputs[i1].insert(0, record['PLC_value'])
+                        self.conf_scales[i1].set(record['cmpnt_conf'])
+        except IndexError as e:
+            messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
+
+
+    def select_video(self,path_video):
+        selected_file = filedialog.askopenfilename(title="Choose a file", filetypes=[("Video Files Type", "*.mp4")])
+        if selected_file:
+            path_video.delete(0,tk.END)
+            path_video.insert(0,selected_file)
+
+    def render(self,
+        progress_label,
+        video_canvas,
+        source = None,
+        device="cpu",
+        save_img=True,
+        exist_ok=False,
+        classes=None,
+        line_thickness=2,
+    ):
+        if source == None : 
+            messagebox.showwarning("Warning", "You have to select a valid file")
+        vid_frame_count = 0
+        # model = YOLO(f"{self.weights.get()}")
+        device = '0' if torch.cuda.is_available() else 'cpu'
+        self.model.to("cuda") if device == "0" else self.model.to("cpu")
+        names = self.model.model.names
+        videocapture = cv2.VideoCapture(source)
+        frame_width, frame_height = int(videocapture.get(3)), int(videocapture.get(4))
+        fps, fourcc = int(videocapture.get(5)), cv2.VideoWriter_fourcc(*"mp4v")
+        total_frames = int(videocapture.get(cv2.CAP_PROP_FRAME_COUNT))
+        save_dir = increment_path(Path("ultralytics_source_output") / "exp", exist_ok)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        video_writer = cv2.VideoWriter(str(save_dir / f"{Path(source).stem}.mp4"), fourcc, fps, (frame_width, frame_height))
+        while videocapture.isOpened():
+            success, frame = videocapture.read()
+            if not success:
+                break
+            vid_frame_count += 1
+            self.handle_params_video(frame,classes,line_thickness,names)
+            # results = self.model.track(frame, persist=True, classes=classes)
+            # if results[0].boxes.id is not None:
+            #     boxes = results[0].boxes.xyxy.cpu().numpy()
+            #     track_ids = results[0].boxes.id.int().cpu().numpy().tolist()
+            #     clss = results[0].boxes.cls.cpu().numpy().tolist()
+            #     xywhs = results[0].boxes.xywh.cpu().numpy().tolist()
+            #     annotator = Annotator(frame, line_width=line_thickness, example=str(names))
+            #     for box, track_id, cls, xywh in zip(boxes, track_ids, clss, xywhs):
+            #         label = f'{str(track_id)} {names[cls]} x:{str(int(xywh[0]))} y:{str(int(xywh[1]))}'
+            #         annotator.box_label(box, label, color=colors(cls, True))
+            if save_img:
+                video_writer.write(frame)
+                self.update_progress(vid_frame_count, total_frames, progress_label)
+        video_writer.release()
+        videocapture.release()
+        cv2.destroyAllWindows()
+        self.show(save_dir,video_canvas)
+
+    def update_progress(self, current_frame, total_frames, progress_label):
+        device = 'GPU' if torch.cuda.is_available() else 'CPU'
+        progress = (current_frame / total_frames) * 100
+        progress_label.config(text=f"Rendering on {device} in progress: {progress:.2f}%")
+        progress_label.update_idletasks()
+
+    def show(self, save_dir,video_canvas):
+        video_path = list(save_dir.glob("*.mp4"))[0]
+        cap = cv2.VideoCapture(str(video_path))
+        self.update_frame(cap, video_canvas)
+
+    def update_frame(self, cap, video_canvas):
+        ret, frame = cap.read()
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (600, 550))
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+            video_canvas.imgtk = imgtk
+            video_canvas.create_image(0, 0, anchor=tk.NW, image=imgtk)
+        video_canvas.after(20, self.update_frame, cap, video_canvas)
+
+    def start_rendering(self,path_video,progress_label,video_canvas):
+        kwargs = {
+            "progress_label": progress_label,
+            "video_canvas": video_canvas,
+            "source": path_video,
+            "device": "cpu",
+            "save_img": True,
+            "exist_ok": False,
+            "classes": None,
+            "line_thickness": 2
+        }
+        processing_thread = threading.Thread(target=self.render, kwargs=kwargs)
+        processing_thread.start()
+
+    def handle_params_video(self,frame,classes,line_thickness,names):
+        results = self.model.track(frame, persist=True, classes=classes)
+        model_settings = [
+            {
+                'label_name':  self.model_name_labels[i1].cget("text"),
+                'join_detect': self.join[i1].get(),
+                'OK_jont': self.ok_vars[i1].get(),
+                'NG_jont': self.ng_vars[i1].get(),
+                'num_labels': int(self.num_inputs[i1].get()),
+                'width_min': int(self.wn_inputs[i1].get()),
+                'width_max': int(self.wx_inputs[i1].get()),
+                'height_min': int(self.hn_inputs[i1].get()),
+                'height_max': int(self.hx_inputs[i1].get()),
+                'PLC_value': int(self.plc_inputs[i1].get()),
+                'cmpnt_conf': int(self.conf_scales[i1].get()),
+            }
+            for i1 in range(len(self.model_name_labels))
+        ]
+        settings_dict = {setting['label_name']: setting for setting in model_settings}
+        if results[0].boxes.id is not None:
+            boxes = results[0].boxes.xyxy.cpu().numpy()
+            track_ids = results[0].boxes.id.int().cpu().numpy().tolist()
+            clss = results[0].boxes.cls.cpu().numpy().tolist()
+            xywhs = results[0].boxes.xywh.cpu().numpy().tolist()
+            conf_list = results[0].boxes.conf.cpu().numpy().tolist()
+            annotator = Annotator(frame, line_width=line_thickness, example=str(names))
+            for box, track_id, cls, xywh, conf in zip(boxes, track_ids, clss, xywhs,conf_list):
+                label = f'{str(track_id)} {names[cls]} {conf:.2f} x:{str(int(xywh[0]))} y:{str(int(xywh[1]))}'
+                if settings_dict[results[0].names[int(cls)]]:
+                    if settings_dict[results[0].names[int(cls)]]['join_detect']:
+                        if int(conf*100) < settings_dict[results[0].names[int(cls)]]['cmpnt_conf']:
+                            annotator.box_label(box, label, color=(0,255,0))
+                        else: 
+                            annotator.box_label(box, label, color=(255, 0, 0))  
+
+        

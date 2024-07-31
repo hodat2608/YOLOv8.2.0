@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-
+import cv2
 from ultralytics.data.augment import LetterBox
 from ultralytics.utils import LOGGER, SimpleClass, ops
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
@@ -204,7 +204,9 @@ class Results(SimpleClass):
         save=False,
         filename=None,
         extract = False,
+        coordinates=False,
         list_remove=[],
+        dictionary={},
         *args, **kwargs
     ):
         """
@@ -314,6 +316,10 @@ class Results(SimpleClass):
             ims = annotator.im
             self.img_np = np.asarray(ims)
 
+        if coordinates:
+            imgs = annotator.export_coordinates(self.img_np,dictionary)
+            self.img_np1 = np.asarray(imgs)
+
         return annotator.result()
 
     def show(self, *args, **kwargs):
@@ -327,9 +333,13 @@ class Results(SimpleClass):
         self.plot(save=True, filename=filename, *args, **kwargs)
         return filename
     
-    def extract_np(self, list_remove=[], *args, **kwargs):
+    def extract_npy(self, list_remove=[], *args, **kwargs):
         self.plot(extract=True,list_remove=list_remove, *args, **kwargs)
         return self.img_np
+    
+    def render_x_y(self, dictionary={}, *args, **kwargs):
+        self.plot(coordinates=True,dictionary=dictionary, *args, **kwargs)
+        return self.img_np1
 
     def verbose(self):
         """Return log string for each task."""

@@ -31,8 +31,9 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def __init__(self, *args, **kwargs):
         super(Model_Camera_1, self).__init__(*args, **kwargs)
         super().__init__()
-        self.database = MySQL_Connection("127.0.0.1","root1","987654321","model_1") 
-        self.name_table = 'test_model_cam1_model1'
+        torch.cuda.set_device(0)
+        self.database = MySQL_Connection("127.0.0.1","root1","987654321","connect_database_model") 
+        self.name_table = 'model_connection_model1'
         self.item_code_cfg = "EDFWTA"
         self.image_files = []
         self.current_image_index = -1
@@ -57,11 +58,13 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.scale_conf_all = None
         self.size_model = None
         self.item_code = []
-        self.make_cls_var = []
+        self.make_cls_var = False
         self.permisson_btn = []
         self.model = None
         self.time_processing_output = None
         self.result_detection = None
+        self.cls = False
+        self.device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     def mohica(self):
         filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
@@ -170,10 +173,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def load_parameters_from_weight(self, records):
         return super().load_parameters_from_weight(records)
-    
-    def handle_image(self, img1_orgin, width, height, camera_frame):
-        return super().handle_image(img1_orgin, width, height, camera_frame)
-    
+      
     def detect_single_img(self, camera_frame):
         return super().detect_single_img(camera_frame)
     
@@ -210,19 +210,12 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def pick_folder_ok(self, folder_ok):
         return super().pick_folder_ok(folder_ok)
     
-    def _make_cls(self, image_path_mks_cls, results, model_settings):
-        return super()._make_cls(image_path_mks_cls, results, model_settings)
-    
     def classify_imgs(self):
         return super().classify_imgs()
-    
-    def processing_handle_image_local(self, input_image_original, width, height, cls=False):
-        return super().processing_handle_image_local(input_image_original, width, height, cls)
-    
+       
     def Camera_Settings(self,settings_notebook):
-
         records,load_path_weight,load_item_code,load_confidence_all_scale = self.load_data_model()
-        self.model = YOLO(load_path_weight)
+        self.model = YOLO(load_path_weight, task='detect').to(device=self.device1)
         filename =r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
         self.model(filename,imgsz=608,conf=0.2)
         print('Load model 1 successfully')
@@ -268,6 +261,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records)
         self.toggle_state_option_layout_parameters()
 
+
     def option_layout_models(self, Frame_1, Frame_2,records):
 
         ttk.Label(Frame_1, text='1. File train detect model', font=('Segoe UI', 12)).grid(column=0, row=0, padx=10, pady=5, sticky="nws")
@@ -306,7 +300,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         label_size_model = ttk.Label(Frame_1, text='2. Size Model', font=('Segoe UI', 12))
         label_size_model.grid(row=5, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
-        options = [468, 608, 832]
+        options = [468, 608, 768]
         self.size_model = ttk.Combobox(Frame_1, values=options, width=7)
         self.size_model.grid(row=6, column=0, columnspan=2, padx=30, pady=5, sticky="nws", ipadx=5, ipady=2)
         self.size_model.set(608)
