@@ -12,8 +12,16 @@ import glob,os,time
 import tkinter as tk
 from tkinter import Label
 from PIL import Image, ImageTk
+import torch
 print(ultralytics.__file__)
 model = YOLO(r"C:\Users\CCSX009\Documents\ultralytics-main\runs\detect\train10\weights\best.pt")
+
+torch.cuda.set_device(0)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model1 = YOLO('/your/model/path1/', task='detect')
+model2 = YOLO('/your/model/path2/', task='detect')
+model.to(device=device)
+
 print('load model successfully')
 def detect_images(model):
     image_paths = glob.glob(f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg")

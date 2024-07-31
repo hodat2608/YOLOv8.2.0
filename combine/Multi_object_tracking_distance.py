@@ -145,8 +145,6 @@ def run(
                 points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
                 cv2.polylines(frame, [points], isClosed=False, color=colors(cls, True), thickness=track_thickness)
                 for region in counting_regions:
-                    print('bbox_center[0]',bbox_center[0])
-                    print('bbox_center[1]',bbox_center[1])
                     if region["polygon"].contains(Point((bbox_center[0], bbox_center[1]))):
                         region["counts"] += 1
             print('=============================')

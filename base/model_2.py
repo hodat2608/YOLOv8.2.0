@@ -16,10 +16,8 @@ import cv2
 import os
 import time
 from PIL import Image,ImageTk
-import socket
 import time
 from tkinter import ttk
-import threading
 import tkinter as tk
 import shutil
 import sys
@@ -31,8 +29,8 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
     def __init__(self, *args, **kwargs):
         super(Model_Camera_2, self).__init__(*args, **kwargs)
         super().__init__()
-        self.database = MySQL_Connection("127.0.0.1","root1","987654321","model_1") 
-        self.name_table = 'test_model_cam1_model1'
+        self.database = MySQL_Connection("127.0.0.1","root1","987654321","connect_database_model") 
+        self.name_table = 'model_connection_model2'
         self.item_code_cfg = "EDFWTA"
         self.image_files = []
         self.current_image_index = -1
@@ -156,8 +154,8 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
     def processing_handle_image_customize(self, input_image, width, height):
         return super().processing_handle_image_customize(input_image, width, height)
     
-    def load_data_model(self):
-        return super().load_data_model()
+    # def load_data_model(self):
+    #     return super().load_data_model()
     
     def load_parameters_model(self, model1, load_path_weight, load_item_code, load_confidence_all_scale, records):
         return super().load_parameters_model(model1, load_path_weight, load_item_code, load_confidence_all_scale, records)
@@ -220,9 +218,14 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         return super().processing_handle_image_local(input_image_original, width, height, cls)
     
     def Camera_Settings(self,settings_notebook):
-
+        # try: 
         records,load_path_weight,load_item_code,load_confidence_all_scale = self.load_data_model()
+        # except : 
+        #     records,load_path_weight = None,r"C:\Users\CCSX009\Documents\ultralytics-main\best.pt"
         self.model = YOLO(load_path_weight)
+        filename =r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
+        self.model(filename,imgsz=608,conf=0.2)
+        print('Load model 2 successfully')
         camera_settings_tab = ttk.Frame(settings_notebook)
         settings_notebook.add(camera_settings_tab, text="Camera 2")
 

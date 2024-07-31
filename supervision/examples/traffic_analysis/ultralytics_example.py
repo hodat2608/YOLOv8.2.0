@@ -1,6 +1,9 @@
 import argparse
 from typing import Dict, Iterable, List, Set
-
+import sys
+from pathlib import Path
+ultralytics_main_dir = Path(__file__).resolve().parent.parent.parent.parent
+sys.path.append(str(ultralytics_main_dir))
 import cv2
 import numpy as np
 from tqdm import tqdm
@@ -177,45 +180,53 @@ class VideoProcessor:
         return self.annotate_frame(frame, detections)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Traffic Flow Analysis with YOLO and ByteTrack"
-    )
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(
+#         description="Traffic Flow Analysis with YOLO and ByteTrack"
+#     )
 
-    parser.add_argument(
-        "--source_weights_path",
-        required=True,
-        help="Path to the source weights file",
-        type=str,
-    )
-    parser.add_argument(
-        "--source_video_path",
-        required=True,
-        help="Path to the source video file",
-        type=str,
-    )
-    parser.add_argument(
-        "--target_video_path",
-        default=None,
-        help="Path to the target video file (output)",
-        type=str,
-    )
-    parser.add_argument(
-        "--confidence_threshold",
-        default=0.3,
-        help="Confidence threshold for the model",
-        type=float,
-    )
-    parser.add_argument(
-        "--iou_threshold", default=0.7, help="IOU threshold for the model", type=float
-    )
+#     parser.add_argument(
+#         "--source_weights_path",
+#         required=True,
+#         help="Path to the source weights file",
+#         type=str,
+#     )
+#     parser.add_argument(
+#         "--source_video_path",
+#         required=True,
+#         help="Path to the source video file",
+#         type=str,
+#     )
+#     parser.add_argument(
+#         "--target_video_path",
+#         default=None,
+#         help="Path to the target video file (output)",
+#         type=str,
+#     )
+#     parser.add_argument(
+#         "--confidence_threshold",
+#         default=0.3,
+#         help="Confidence threshold for the model",
+#         type=float,
+#     )
+#     parser.add_argument(
+#         "--iou_threshold", default=0.7, help="IOU threshold for the model", type=float
+#     )
 
-    args = parser.parse_args()
-    processor = VideoProcessor(
-        source_weights_path=args.source_weights_path,
-        source_video_path=args.source_video_path,
-        target_video_path=args.target_video_path,
-        confidence_threshold=args.confidence_threshold,
-        iou_threshold=args.iou_threshold,
+#     args = parser.parse_args()
+#     processor = VideoProcessor(
+#         source_weights_path=args.source_weights_path,
+#         source_video_path=args.source_video_path,
+#         target_video_path=args.target_video_path,
+#         confidence_threshold=args.confidence_threshold,
+#         iou_threshold=args.iou_threshold,
+#     )
+#     processor.process_video()
+
+
+processor = VideoProcessor(
+        source_weights_path=r"C:\Users\CCSX009\Documents\ultralytics-main\yolov8n.pt",
+        source_video_path=r"C:\Users\CCSX009\Videos\vecteezy_landscape-view-with-street-and-traffic-of-cars-on-asphalt_14394048.mp4",
+        # target_video_path=r"C:\Users\CCSX009\Documents\iot"
     )
-    processor.process_video()
+processor.process_video()
