@@ -1,20 +1,23 @@
 import tkinter as tk
-from model_1 import Model_Camera_1
-from model_2 import Model_Camera_2
-from video_detection import Video_Dectection
+from model_1 import *
+from model_2 import *
+from programTraining import *
+from videoDetection import *
 from tkinter import ttk
 from base_model import removefile
-from tkinter import Menu, Toplevel
 from tkinter import *
-import time,os,subprocess
+from tkinter import *
+import os,subprocess
 from tkinter import filedialog
-
+from tkinter import messagebox,simpledialog
 def copy_file_contents(source_path, destination_path):
-    with open(source_path, 'r') as source_file:
-        contents = source_file.read()
-    with open(destination_path, 'w') as destination_file:
-        destination_file.write(contents)
-
+    try:
+        with open(source_path, 'r') as source_file:
+            contents = source_file.read()
+        with open(destination_path, 'w') as destination_file:
+            destination_file.write(contents)
+    except: 
+        pass
 def open_label_img(): 
     source_path = filedialog.askopenfilename(title="Choose a file", filetypes=[("Model Files", "classes.txt")])
     destination_path = os.getcwd() + '/labelImg/data/predefined_classes.txt'
@@ -55,22 +58,17 @@ def create_context_menu(notebook):
     context_menu.add_command(label="Close Tab", command=lambda: close_tab(notebook))
 
     def show_context_menu(event):
-        # Xác định tab được nhấp chuột
         tab_index = notebook.index("@%d,%d" % (event.x, event.y))
         if tab_index != -1:
             notebook.select(tab_index)
             context_menu.post(event.x_root, event.y_root)
-
-    notebook.bind("<Button-3>", show_context_menu)  # Sử dụng chuột phải để mở menu context
-
+    notebook.bind("<Button-3>", show_context_menu)
     return context_menu
 
 def refresh_tab(notebook):
     tab = notebook.select()
     if tab:
-        # Giả sử có một cách để làm mới nội dung tab
         print(f"Refreshing tab: {notebook.tab(tab, 'text')}")
-        # Implement your refresh logic here
 
 def hide_tab(notebook):
     tab = notebook.select()
@@ -158,12 +156,24 @@ def display_layout(notebook, window):
     progress_label.pack_forget()
     loading_label.pack_forget()
 
-
 def video(notebook, window):
     settings_notebook = ttk.Notebook(notebook)
     notebook.add(settings_notebook, text="Video Detection")
     tab_camera_1 = Video_Dectection()
     tab_camera_1.Video_Settings(settings_notebook)
+
+def training_data(notebook, window):
+    settings_notebook = ttk.Notebook(notebook)
+    notebook.add(settings_notebook, text="Training")
+    tab_camera_1 = Training_Data()
+    tab_camera_1.layout(settings_notebook,window)
+
+def confirm_exit(window):
+    confirm_exit = messagebox.askokcancel("Confirm", "Are you sure to exit ?")
+    if confirm_exit: 
+        window.quit() 
+    else: 
+        pass
 
 def main():
     global menubar
@@ -177,26 +187,15 @@ def main():
     menubar = Menu(window)
     filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="Open Camera Display", command=lambda: display_layout(notebook, window))
-    filemenu.add_command(label="Label Image", command=lambda: open_label_img)
-    filemenu.add_command(label="Train Data", command=donothing)
+    filemenu.add_command(label="Label Image", command=lambda: open_label_img())
+    filemenu.add_command(label="Train Data", command=lambda: training_data(notebook, window))
     filemenu.add_command(label="Real-Time Detection", command=donothing)
     filemenu.add_command(label="Video Detection", command=lambda: video(notebook, window))
     filemenu.add_separator()
-    filemenu.add_command(label="Exit", command=window.quit)
+    filemenu.add_command(label="Exit", command=lambda:confirm_exit(window))
     menubar.add_cascade(label="Tools", menu=filemenu)
 
-    editmenu = Menu(menubar, tearoff=0)
-    editmenu.add_command(label="Undo", command=donothing)
-    editmenu.add_separator()
-    editmenu.add_command(label="Cut", command=donothing)
-    editmenu.add_command(label="Copy", command=donothing)
-    editmenu.add_command(label="Paste", command=donothing)
-    editmenu.add_command(label="Delete", command=donothing)
-    editmenu.add_command(label="Select All", command=donothing)
-    menubar.add_cascade(label="Edit", menu=editmenu)
-
     helpmenu = Menu(menubar, tearoff=0)
-    helpmenu.add_command(label="Help Index", command=donothing)
     helpmenu.add_command(label="About...", command=donothing)
     menubar.add_cascade(label="Help", menu=helpmenu)
 

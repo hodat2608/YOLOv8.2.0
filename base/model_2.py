@@ -9,18 +9,13 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import glob
-import torch
 # import stapipy as st
-import numpy as np
 import cv2
-import os
-import time
 from PIL import Image,ImageTk
 import time
 from tkinter import ttk
 import tkinter as tk
 import shutil
-import sys
 import os
 
 

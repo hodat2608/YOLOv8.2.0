@@ -12,7 +12,6 @@ from tkinter import messagebox,simpledialog
 import threading
 import numpy as np
 import time
-from yaml import load
 import socket
 from udp import UDPFinsConnection
 from initialization import FinsPLCMemoryAreas
@@ -20,12 +19,9 @@ import tkinter as tk
 import shutil
 import os
 soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-from collections import defaultdict
 import cv2
 from ultralytics.utils.files import increment_path
-import supervision as sv
-from collections import deque
-from ultralytics.utils.plotting import Annotator, colors
+from ultralytics.utils.plotting import Annotator
 import torch
 def removefile():
     directory1 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg'
@@ -319,7 +315,6 @@ class Base:
                     list_label_ng.append(setting['label_name'])
         if not ok_variable:
             results_detect = 'OK'
-
         show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
         show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
@@ -768,7 +763,6 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         except IndexError as e:
             messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
-
     def select_video(self,path_video):
         selected_file = filedialog.askopenfilename(title="Choose a file", filetypes=[("Video Files Type", "*.mp4")])
         if selected_file:
@@ -788,7 +782,6 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         if source == None : 
             messagebox.showwarning("Warning", "You have to select a valid file")
         vid_frame_count = 0
-        # model = YOLO(f"{self.weights.get()}")
         device = '0' if torch.cuda.is_available() else 'cpu'
         self.model.to("cuda") if device == "0" else self.model.to("cpu")
         names = self.model.model.names
@@ -805,16 +798,6 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
                 break
             vid_frame_count += 1
             self.handle_params_video(frame,classes,line_thickness,names)
-            # results = self.model.track(frame, persist=True, classes=classes)
-            # if results[0].boxes.id is not None:
-            #     boxes = results[0].boxes.xyxy.cpu().numpy()
-            #     track_ids = results[0].boxes.id.int().cpu().numpy().tolist()
-            #     clss = results[0].boxes.cls.cpu().numpy().tolist()
-            #     xywhs = results[0].boxes.xywh.cpu().numpy().tolist()
-            #     annotator = Annotator(frame, line_width=line_thickness, example=str(names))
-            #     for box, track_id, cls, xywh in zip(boxes, track_ids, clss, xywhs):
-            #         label = f'{str(track_id)} {names[cls]} x:{str(int(xywh[0]))} y:{str(int(xywh[1]))}'
-            #         annotator.box_label(box, label, color=colors(cls, True))
             if save_img:
                 video_writer.write(frame)
                 self.update_progress(vid_frame_count, total_frames, progress_label)
@@ -859,7 +842,8 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         processing_thread = threading.Thread(target=self.render, kwargs=kwargs)
         processing_thread.start()
 
-    def handle_params_video(self,frame,classes,line_thickness,names):
+    def handle_params_video(self,frame,classes,line_thickness,names): 
+             
         results = self.model.track(frame, persist=True, classes=classes)
         model_settings = [
             {
@@ -879,6 +863,7 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         if results[0].boxes.id is not None:
+            coun_id = []
             boxes = results[0].boxes.xyxy.cpu().numpy()
             track_ids = results[0].boxes.id.int().cpu().numpy().tolist()
             clss = results[0].boxes.cls.cpu().numpy().tolist()
@@ -888,10 +873,28 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
             for box, track_id, cls, xywh, conf in zip(boxes, track_ids, clss, xywhs,conf_list):
                 label = f'{str(track_id)} {names[cls]} {conf:.2f} x:{str(int(xywh[0]))} y:{str(int(xywh[1]))}'
                 if settings_dict[results[0].names[int(cls)]]:
-                    if settings_dict[results[0].names[int(cls)]]['join_detect']:
-                        if int(conf*100) < settings_dict[results[0].names[int(cls)]]['cmpnt_conf']:
-                            annotator.box_label(box, label, color=(0,255,0))
-                        else: 
-                            annotator.box_label(box, label, color=(255, 0, 0))  
+                    if settings_dict[results[0].names[int(cls)]]['join_detect']:                      
+                        annotator.box_label(box, label, color=(255,0,0))                         
+                a_point = (200, 1500)
+                d_point = (3700, 2000)
+                color = (255, 255, 255)
+                thickness = 2
+                cv2.rectangle(frame, a_point, d_point, color, thickness)
 
-        
+                if a_point[0] <= xywh[0] <= d_point[0] and a_point[1] <= xywh[1] <= d_point[1]:
+                    if track_id in coun_id:
+                        continue
+                    coun_id.append(track_id)
+            text_position = (a_point[0] + 10, a_point[1] + 30)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 1
+            text_color = (0, 0, 255)
+            text_thickness = 2
+            cv2.putText(frame, str(len(coun_id)), text_position, font, font_scale, text_color, text_thickness)
+            if len(coun_id)>2:
+                cv2.putText(frame, 'NG',(200,200),cv2.FONT_HERSHEY_COMPLEX, 3,(0,0,255),5)
+            else:
+                cv2.putText(frame, 'OK',(200,200),cv2.FONT_HERSHEY_COMPLEX, 3,(0,255,0),5)  
+
+        else: 
+            pass

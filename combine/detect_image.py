@@ -14,13 +14,13 @@ from tkinter import Label
 from PIL import Image, ImageTk
 import torch
 print(ultralytics.__file__)
-model = YOLO(r"C:\Users\CCSX009\Documents\ultralytics-main\runs\detect\train10\weights\best.pt")
+model = YOLO(r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240823114241148 - Copy.jpg")
 
-torch.cuda.set_device(0)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model1 = YOLO('/your/model/path1/', task='detect')
-model2 = YOLO('/your/model/path2/', task='detect')
-model.to(device=device)
+# torch.cuda.set_device(0)
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model1 = YOLO('/your/model/path1/', task='detect')
+# model2 = YOLO('/your/model/path2/', task='detect')
+# model.to(device=device)
 
 print('load model successfully')
 def detect_images(model):
@@ -31,7 +31,7 @@ def detect_images(model):
         else:
             for filename in image_paths:
                 t1 = time.time()
-                results = model.track(filename,imgsz=608,conf=0.01)
+                results = model(filename,imgsz=416,conf=0.01)
                 list_remove = [8,10,11,12,13,14,15,16]
                 dictionary=[]
                 for result in results:

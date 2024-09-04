@@ -324,6 +324,7 @@ class Results(SimpleClass):
 
     def show(self, *args, **kwargs):
         """Show annotated results image."""
+        print('why meeeeeeeeeeeeeeee')
         self.plot(show=True, *args, **kwargs)
 
     def save(self, filename=None, *args, **kwargs):
