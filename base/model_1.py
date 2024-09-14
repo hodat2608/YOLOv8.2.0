@@ -68,7 +68,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def mohica(self):
         filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
-        filename = "C:/FH/New folder (3)/2024-05-21_18-45-10-523816_luu_xuat.jpg"
+        filename = r"C:\Users\CCSX009\Music\2024-01-20_14-17-12-491553-C1.jpg"
         shutil.copy(filename,filepath)
 
     def display_images_c1(self, camera_frame, camera_number):
@@ -92,6 +92,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 else:
                     self.result_detection.config(text=results_detect,fg='red')
                 list_label_ng = ','.join(list_label_ng)
+                print('image_result',image_result)
                 img_pil = Image.fromarray(image_result)
                 print('img_pil',img_pil)
                 photo = ImageTk.PhotoImage(img_pil)
@@ -158,6 +159,9 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def processing_handle_image_customize(self, input_image, width, height):
         return super().processing_handle_image_customize(input_image, width, height)
+    
+    def processing_handle_image_customize_obb(self, input_image, width, height):
+        return super().processing_handle_image_customize_obb(input_image, width, height)
     
     def load_data_model(self):
         return super().load_data_model()
@@ -264,13 +268,23 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
 
     def option_layout_models(self, Frame_1, Frame_2,records):
 
-        ttk.Label(Frame_1, text='1. File train detect model', font=('Segoe UI', 12)).grid(column=0, row=0, padx=10, pady=5, sticky="nws")
+        datasets_format = ttk.Frame(Frame_1)
+        datasets_format.grid(row=1, column=0, columnspan=2, padx=(15, 30), pady=10, sticky="w") 
+
+        ttk.Label(datasets_format, text='Dataset Formats:', font=('ubuntu', 12), width=15 ).grid(column=0, row=1, padx=10, pady=5, sticky="w")
+
+        option_datasets_format = ['BASE Dataset Format','OBB Dataset Format']
+        self.datasets_format_model = ttk.Combobox(datasets_format, values=option_datasets_format, width=7)
+        self.datasets_format_model.grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=40, ipady=2)
+
+
+        ttk.Label(Frame_1, text='File train detect model', font=('Segoe UI', 12)).grid(column=0, row=0, padx=10, pady=5, sticky="nws")
 
         self.weights = ttk.Entry(Frame_1, width=60)
-        self.weights.grid(row=1, column=0, columnspan=5, padx=(30, 5), pady=5, sticky="w", ipadx=20, ipady=2)
+        self.weights.grid(row=2, column=0, columnspan=5, padx=(30, 5), pady=5, sticky="w", ipadx=20, ipady=2)
 
         button_frame = ttk.Frame(Frame_1)
-        button_frame.grid(row=2, column=0, columnspan=2, padx=(30, 30), pady=5, sticky="w")
+        button_frame.grid(row=3, column=0, columnspan=2, padx=(30, 30), pady=5, sticky="w")
 
         change_model_button = tk.Button(button_frame, text="Change Model", command=lambda: self.change_model(Frame_2))
         change_model_button.grid(row=0, column=0, padx=(0, 8), pady=5, sticky="w", ipadx=5, ipady=2)
@@ -290,42 +304,42 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.permisson_btn = tk.Button(button_frame, text="Unlock", command=lambda: self.toggle_state_layout_model())
         self.permisson_btn.grid(row=0, column=3, padx=(0, 8), pady=5, sticky="w", ipadx=5, ipady=2)
 
-        label_scale_conf_all = ttk.Label(Frame_1, text='2. Confidence Threshold', font=('Segoe UI', 12))
-        label_scale_conf_all.grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
+        label_scale_conf_all = ttk.Label(Frame_1, text='Confidence Threshold', font=('Segoe UI', 12))
+        label_scale_conf_all.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
         self.scale_conf_all = tk.Scale(Frame_1, from_=1, to=100, orient='horizontal', length=400)
-        self.scale_conf_all.grid(row=4, column=0, columnspan=2, padx=30, pady=5, sticky="nws")
+        self.scale_conf_all.grid(row=5, column=0, columnspan=2, padx=30, pady=5, sticky="nws")
         self.lockable_widgets.append(self.scale_conf_all)
         
-        label_size_model = ttk.Label(Frame_1, text='2. Size Model', font=('Segoe UI', 12))
-        label_size_model.grid(row=5, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
+        label_size_model = ttk.Label(Frame_1, text='Size Model', font=('Segoe UI', 12))
+        label_size_model.grid(row=6, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
-        options = [468, 608, 768]
+        options = [480, 608, 768]
         self.size_model = ttk.Combobox(Frame_1, values=options, width=7)
-        self.size_model.grid(row=6, column=0, columnspan=2, padx=30, pady=5, sticky="nws", ipadx=5, ipady=2)
+        self.size_model.grid(row=7, column=0, columnspan=2, padx=30, pady=5, sticky="nws", ipadx=5, ipady=2)
         self.size_model.set(608)
         self.lockable_widgets.append(self.size_model)
       
-        name_item_code = ttk.Label(Frame_1, text='3. Item Code', font=('Segoe UI', 12))
-        name_item_code.grid(row=7, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
+        name_item_code = ttk.Label(Frame_1, text='Item Code', font=('Segoe UI', 12))
+        name_item_code.grid(row=8, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
         self.item_code = ttk.Entry(Frame_1, width=10)
-        self.item_code.grid(row=8, column=0, columnspan=2, padx=30, pady=5, sticky="w", ipadx=5, ipady=2)
+        self.item_code.grid(row=9, column=0, columnspan=2, padx=30, pady=5, sticky="w", ipadx=5, ipady=2)
         self.lockable_widgets.append(self.item_code)
 
         save_data_to_database = ttk.Button(Frame_1, text='Apply', command=lambda: self.save_params_model())
-        save_data_to_database.grid(row=9, column=0, columnspan=2, padx=30, pady=5, sticky="w", ipadx=5, ipady=2)
+        save_data_to_database.grid(row=10, column=0, columnspan=2, padx=30, pady=5, sticky="w", ipadx=5, ipady=2)
         save_data_to_database.config(state="disabled")
         self.lockable_widgets.append(save_data_to_database)
 
-        camera_frame_display = ttk.Label(Frame_1, text='4. Modify Image', font=('Segoe UI', 12))
-        camera_frame_display.grid(row=10, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
+        camera_frame_display = ttk.Label(Frame_1, text='Modify Image', font=('Segoe UI', 12))
+        camera_frame_display.grid(row=11, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
         camera_frame = ttk.LabelFrame(Frame_1, text=f"Camera 1", width=500, height=500)
-        camera_frame.grid(row=11, column=0, columnspan=2, padx=30, pady=5, sticky="nws")
+        camera_frame.grid(row=12, column=0, columnspan=2, padx=30, pady=5, sticky="nws")
 
         camera_custom_setup = ttk.Frame(Frame_1)
-        camera_custom_setup.grid(row=12, column=0, columnspan=2, padx=(30, 30), pady=5, sticky="w") 
+        camera_custom_setup.grid(row=13, column=0, columnspan=2, padx=(30, 30), pady=5, sticky="w") 
 
         single_img = tk.Button(camera_custom_setup, text="Only Image", command=lambda: self.detect_single_img(camera_frame))
         single_img.grid(row=0, column=0, padx=(0, 10), pady=5, sticky="w", ipadx=5, ipady=2)
@@ -360,7 +374,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         make_cls.var = self.make_cls_var
 
         logging_frame = ttk.Frame(Frame_1)
-        logging_frame.grid(row=13, column=0, columnspan=2, padx=(30, 30), pady=10, sticky="w") 
+        logging_frame.grid(row=14, column=0, columnspan=2, padx=(30, 30), pady=10, sticky="w") 
 
         logging = tk.Button(logging_frame, text="Logging Image", command=lambda: self.logging(folder_ok,folder_ng,logging_ok_checkbox_var,logging_ng_checkbox_var,camera_frame,percent_entry,logging_frame))
         logging.grid(row=0, column=0, padx=(0,10), pady=5, sticky="w", ipadx=7, ipady=2)

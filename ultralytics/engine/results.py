@@ -16,7 +16,7 @@ from ultralytics.data.augment import LetterBox
 from ultralytics.utils import LOGGER, SimpleClass, ops
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 from ultralytics.utils.torch_utils import smart_inference_mode
-
+import math
 
 class BaseTensor(SimpleClass):
     """Base tensor class with additional methods for easy manipulation and device handling."""
@@ -279,7 +279,23 @@ class Results(SimpleClass):
             annotator.masks(pred_masks.data, colors=[colors(x, True) for x in idx], im_gpu=im_gpu)
 
         # Plot Detect results
-        if pred_boxes is not None and show_boxes:
+        # if pred_boxes is not None and show_boxes:
+        #     valid_pred_boxes = []
+        #     for d in reversed(pred_boxes):
+        #         c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+        #         if c in list_remove:
+        #             continue
+        #         valid_pred_boxes.append(d)
+        #     for d in valid_pred_boxes:
+        #         c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+        #         name = ("" if id is None else f"id:{id} ") + names[c]
+        #         label = (f"{name} {conf:.2f}" if conf else name) if labels else None
+        #         box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+        #         annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+
+
+        # Plot Detect results
+        if pred_boxes is not None and show_boxes:     
             valid_pred_boxes = []
             for d in reversed(pred_boxes):
                 c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
@@ -287,11 +303,25 @@ class Results(SimpleClass):
                     continue
                 valid_pred_boxes.append(d)
             for d in valid_pred_boxes:
-                c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-                name = ("" if id is None else f"id:{id} ") + names[c]
-                label = (f"{name} {conf:.2f}" if conf else name) if labels else None
-                box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                try:
+                    radian = d.xywhr.tolist()
+                except:
+                    radian = None
+                if radian: 
+                    for r in radian: 
+                        rotage = math.degrees(r[4])
+                        print(rotage)
+                        c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+                        name = ("" if id is None else f"id:{id} ") + names[c]
+                        label = (f"{name} {conf:.2f} r={int(rotage)}" if conf else name) if labels else None
+                        box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+                        annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                else: 
+                    c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+                    name = ("" if id is None else f"id:{id} ") + names[c]
+                    label = (f"{name} {conf:.2f}" if conf else name) if labels else None
+                    box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+                    annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
 
         # Plot Classify results
         if pred_probs is not None and show_probs:

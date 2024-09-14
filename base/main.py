@@ -22,7 +22,7 @@ def open_label_img():
     source_path = filedialog.askopenfilename(title="Choose a file", filetypes=[("Model Files", "classes.txt")])
     destination_path = os.getcwd() + '/labelImg/data/predefined_classes.txt'
     copy_file_contents(source_path,destination_path)
-    program_dir = os.path.join(os.getcwd(), 'labelImg' , 'labelImg.py')         
+    program_dir = os.path.join(os.getcwd(), 'labelImg_OBB' , 'labelImg.py')         
     subprocess.call(['python',program_dir])
 
 def open_tools_window(root):
@@ -188,9 +188,9 @@ def main():
     filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="Open Camera Display", command=lambda: display_layout(notebook, window))
     filemenu.add_command(label="Label Image", command=lambda: open_label_img())
-    filemenu.add_command(label="Train Data", command=lambda: training_data(notebook, window))
-    filemenu.add_command(label="Real-Time Detection", command=donothing)
-    filemenu.add_command(label="Video Detection", command=lambda: video(notebook, window))
+    filemenu.add_command(label="Train Datasets", command=lambda: training_data(notebook, window))
+    filemenu.add_command(label="Real-Time Integration", command=donothing)
+    filemenu.add_command(label="Extract Output", command=lambda: video(notebook, window))
     filemenu.add_separator()
     filemenu.add_command(label="Exit", command=lambda:confirm_exit(window))
     menubar.add_cascade(label="Tools", menu=filemenu)

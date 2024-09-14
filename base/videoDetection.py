@@ -87,7 +87,7 @@ class Video_Dectection(Base,base_handle_video):
         self.model(filename,imgsz=608,conf=0.2)
         print('Load model 1 successfully')
         camera_settings_tab = ttk.Frame(settings_notebook)
-        settings_notebook.add(camera_settings_tab, text="Camera 1")
+        settings_notebook.add(camera_settings_tab, text="Settings")
 
         canvas1 = tk.Canvas(camera_settings_tab)
         scrollbar = ttk.Scrollbar(camera_settings_tab, orient="vertical", command=canvas1.yview)

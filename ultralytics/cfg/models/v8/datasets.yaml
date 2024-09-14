@@ -1,4 +1,4 @@
 train: C:\Users\CCSX009\Documents\ultralytics-main\datasets/train/images
 val: C:\Users\CCSX009\Documents\ultralytics-main\datasets/valid/images
 nc: 1
-names: ['chan_comi']
+names: ['cuon_cam']

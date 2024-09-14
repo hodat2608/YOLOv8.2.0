@@ -1,0 +1,1 @@
+['keo_truc', 'keo_comi', 'keo_it', 'keo_lo']

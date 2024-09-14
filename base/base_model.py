@@ -23,6 +23,7 @@ import cv2
 from ultralytics.utils.files import increment_path
 from ultralytics.utils.plotting import Annotator
 import torch
+import math
 def removefile():
     directory1 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg'
     directory2 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera2/*.jpg'
@@ -301,6 +302,64 @@ class Base:
                             or int(conf*100) < setting['cmpnt_conf']:
                         list_remove.append(int(cls))
                         continue
+                    allowed_classes.append(results[0].names[int(cls)])
+                else:
+                    list_remove.append(int(cls))           
+        for model_name,setting in settings_dict.items():
+            if setting['join_detect'] and setting['OK_jont']:
+                if allowed_classes.count(setting['label_name']) != setting['num_labels']:
+                    results_detect,ok_variable = 'NG',True
+                    list_label_ng.append(model_name)
+            if setting['join_detect'] and setting['NG_jont']:
+                if model_name in allowed_classes:
+                    results_detect,ok_variable = 'NG',True
+                    list_label_ng.append(setting['label_name'])
+        if not ok_variable:
+            results_detect = 'OK'
+        show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
+        show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
+        output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
+        return output_image, results_detect, list_label_ng
+    
+    def processing_handle_image_customize_obb(self, input_image, width, height):
+        size_model_all = int(self.size_model.get())
+        conf_all = int(self.scale_conf_all.get()) / 100
+        results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
+        model_settings = [
+            {
+                'label_name':  self.model_name_labels[i1].cget("text"),
+                'join_detect': self.join[i1].get(),
+                'OK_jont': self.ok_vars[i1].get(),
+                'NG_jont': self.ng_vars[i1].get(),
+                'num_labels': int(self.num_inputs[i1].get()),
+                'width_min': int(self.wn_inputs[i1].get()),
+                'width_max': int(self.wx_inputs[i1].get()),
+                'height_min': int(self.hn_inputs[i1].get()),
+                'height_max': int(self.hx_inputs[i1].get()),
+                'PLC_value': int(self.plc_inputs[i1].get()),
+                'cmpnt_conf': int(self.conf_scales[i1].get()),
+            }
+            for i1 in range(len(self.model_name_labels))
+        ]
+        settings_dict = {setting['label_name']: setting for setting in model_settings}
+        obb_dict = results[0].obb.cpu().numpy()
+        xywhr_list = obb_dict.xywhr.tolist()
+        cls_list = obb_dict.cls.tolist()
+        conf_list = obb_dict.conf.tolist()
+        allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
+        for xywhr, cls, conf in zip(xywhr_list, cls_list, conf_list):
+            setting = settings_dict[results[0].names[int(cls)]]
+            if setting:
+                if setting['join_detect']:
+                    if xywhr[2] < setting['width_min'] or xywhr[2] > setting['width_max'] \
+                            or xywhr[3] < setting['height_min'] or xywhr[3] > setting['height_max'] \
+                            or int(conf*100) < setting['cmpnt_conf']:
+                        list_remove.append(int(cls))
+                        continue
+                    elif 14 < math.degrees(xywhr[4]) < 16 :
+                        results_detect,ok_variable = 'NG',True
+                        list_label_ng.append(setting['label_name'])   
+
                     allowed_classes.append(results[0].names[int(cls)])
                 else:
                     list_remove.append(int(cls))           
