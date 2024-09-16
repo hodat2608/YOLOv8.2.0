@@ -199,9 +199,12 @@ class Base:
         self.hx_inputs = []
         self.plc_inputs = []
         self.conf_scales = []
+        self.rn_inputs = []
+        self.rx_inputs = []
         self.widgets_option_layout_parameters = []
         self.row_widgets = []
         self.weights = []
+        self.datasets_format_model = []
         self.scale_conf_all = None
         self.size_model = None
         self.item_code = []
@@ -210,6 +213,7 @@ class Base:
         self.model = None
         self.time_processing_output = None
         self.result_detection = None
+        self.datasets_format_model = None
 
     def connect_database(self):
         cursor, db_connection  = self.database.Connect_MySQLServer()
@@ -229,41 +233,93 @@ class Base:
         confirm_save_data = messagebox.askokcancel("Confirm", "Are you sure you want to save the data?")
         cursor,db_connection,check_connection,reconnect = self.connect_database()
         if confirm_save_data:
-            try:
-                weight = self.weights.get()
-                confidence_all = int(self.scale_conf_all.get())
-                size_model = int(self.size_model.get())
-                item_code_value = str(self.item_code.get())
-                cursor.execute(f"DELETE FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
-                for i1 in range(len(self.model_name_labels)):
-                    label_name =  self.model_name_labels[i1].cget("text")
-                    join_detect = self.join[i1].get()
-                    OK_jont = self.ok_vars[i1].get()
-                    NG_jont = self.ng_vars[i1].get()
-                    num_labels = int(self.num_inputs[i1].get())
-                    width_min = int(self.wn_inputs[i1].get())
-                    width_max = int(self.wx_inputs[i1].get())
-                    height_min = int(self.hn_inputs[i1].get())
-                    height_max = int(self.hx_inputs[i1].get())
-                    PLC_value = int(self.plc_inputs[i1].get())
-                    cmpnt_conf = int(self.conf_scales[i1].get())
-                    query_sql = f"""
-                    INSERT INTO {self.name_table}
-                    (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
-                    height_min, height_max, PLC_value, cmpnt_conf, size_detection)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """
-                    values = (item_code_value, weight, confidence_all, label_name, join_detect, OK_jont, NG_jont, num_labels, 
-                            width_min, width_max, height_min, height_max, PLC_value, cmpnt_conf,size_model)
-                    cursor.execute(query_sql,values)
-                db_connection.commit()
-                cursor.close()
-                db_connection.close()
-                messagebox.showinfo("Notification", "Saved parameters successfully!")
-            except Exception as e:
-                cursor.close()
-                db_connection.close()
-                messagebox.showerror("Error", f"Data saved failed! Error: {str(e)}")
+            if self.datasets_format_model.get() == 'AABB':
+                print('AABB')
+                try:
+                    item_code_value = str(self.item_code.get())
+                    dataset_format = self.datasets_format_model.get()
+                    weight = self.weights.get()
+                    confidence_all = int(self.scale_conf_all.get())
+                    size_model = int(self.size_model.get())
+                    try:
+                        cursor.execute(f"DELETE FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
+                    except:
+                        pass
+
+                    for i1 in range(len(self.model_name_labels)):
+                        label_name =  self.model_name_labels[i1].cget("text")
+                        join_detect = self.join[i1].get()
+                        OK_jont = self.ok_vars[i1].get()
+                        NG_jont = self.ng_vars[i1].get()
+                        num_labels = int(self.num_inputs[i1].get())
+                        width_min = int(self.wn_inputs[i1].get())
+                        width_max = int(self.wx_inputs[i1].get())
+                        height_min = int(self.hn_inputs[i1].get())
+                        height_max = int(self.hx_inputs[i1].get())
+                        PLC_value = int(self.plc_inputs[i1].get())
+                        cmpnt_conf = int(self.conf_scales[i1].get())
+                        query_sql = f"""
+                        INSERT INTO {self.name_table}
+                        (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
+                        height_min, height_max, PLC_value, cmpnt_conf, size_detection, dataset_format)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+                        values = (item_code_value, weight, confidence_all, label_name, join_detect, OK_jont, NG_jont, num_labels, 
+                                width_min, width_max, height_min, height_max, PLC_value, cmpnt_conf,size_model,dataset_format)
+                        cursor.execute(query_sql,values)
+                    db_connection.commit()
+                    cursor.close()
+                    db_connection.close()
+                    messagebox.showinfo("Notification", "Saved parameters successfully!")
+                except Exception as e:
+                    cursor.close()
+                    db_connection.close()
+                    messagebox.showerror("Error", f"Data saved failed! Error: {str(e)}")
+
+            elif self.datasets_format_model.get() == 'OBB':
+                print('OBB')
+                try:
+                    dataset_format = self.datasets_format_model.get()
+                    weight = self.weights.get()
+                    confidence_all = int(self.scale_conf_all.get())
+                    size_model = int(self.size_model.get())
+                    item_code_value = str(self.item_code.get())
+                    try:
+                        cursor.execute(f"DELETE FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
+                    except:
+                        pass
+
+                    for i1 in range(len(self.model_name_labels)):
+                        label_name =  self.model_name_labels[i1].cget("text")
+                        join_detect = self.join[i1].get()
+                        OK_jont = self.ok_vars[i1].get()
+                        NG_jont = self.ng_vars[i1].get()
+                        num_labels = int(self.num_inputs[i1].get())
+                        width_min = int(self.wn_inputs[i1].get())
+                        width_max = int(self.wx_inputs[i1].get())
+                        height_min = int(self.hn_inputs[i1].get())
+                        height_max = int(self.hx_inputs[i1].get())
+                        PLC_value = int(self.plc_inputs[i1].get())
+                        cmpnt_conf = int(self.conf_scales[i1].get())
+                        rotage_min = float(self.rn_inputs[i1].get())
+                        rotage_max = float(self.rx_inputs[i1].get())
+                        query_sql = f"""
+                        INSERT INTO {self.name_table}
+                        (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
+                        height_min, height_max, PLC_value, cmpnt_conf, size_detection,rotage_min,rotage_max,dataset_format)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+                        values = (item_code_value, weight, confidence_all, label_name, join_detect, OK_jont, NG_jont, num_labels, 
+                                width_min, width_max, height_min, height_max, PLC_value, cmpnt_conf,size_model,rotage_min,rotage_max,dataset_format)
+                        cursor.execute(query_sql,values)
+                    db_connection.commit()
+                    cursor.close()
+                    db_connection.close()
+                    messagebox.showinfo("Notification", "Saved parameters successfully!")
+                except Exception as e:
+                    cursor.close()
+                    db_connection.close()
+                    messagebox.showerror("Error", f"Data saved failed! Error: {str(e)}")  
         else:
             pass
 
@@ -338,11 +394,14 @@ class Base:
                 'height_max': int(self.hx_inputs[i1].get()),
                 'PLC_value': int(self.plc_inputs[i1].get()),
                 'cmpnt_conf': int(self.conf_scales[i1].get()),
+                'rotage_min': float(self.rn_inputs[i1].get()),
+                'rotage_max': float(self.rx_inputs[i1].get()),
             }
             for i1 in range(len(self.model_name_labels))
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         obb_dict = results[0].obb.cpu().numpy()
+        print('obb_dict',obb_dict)
         xywhr_list = obb_dict.xywhr.tolist()
         cls_list = obb_dict.cls.tolist()
         conf_list = obb_dict.conf.tolist()
@@ -356,10 +415,9 @@ class Base:
                             or int(conf*100) < setting['cmpnt_conf']:
                         list_remove.append(int(cls))
                         continue
-                    elif 14 < math.degrees(xywhr[4]) < 16 :
+                    elif float(round(math.degrees(xywhr[4]),1)) < setting['rotage_min'] or float(round(math.degrees(xywhr[4]),1)) > setting['rotage_max']:
                         results_detect,ok_variable = 'NG',True
                         list_label_ng.append(setting['label_name'])   
-
                     allowed_classes.append(results[0].names[int(cls)])
                 else:
                     list_remove.append(int(cls))           
@@ -379,7 +437,6 @@ class Base:
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
         return output_image, results_detect, list_label_ng
 
-    
     def load_data_model(self):
         cursor, db_connection,_,_ = self.connect_database()
         print(self.name_table)
@@ -392,15 +449,22 @@ class Base:
             load_item_code = first_record['item_code']
             load_path_weight = first_record['weight']
             load_confidence_all_scale = first_record['confidence_all']
-        return records,load_path_weight,load_item_code,load_confidence_all_scale
+            load_dataset_format = first_record['dataset_format']
+        return records,load_path_weight,load_item_code,load_confidence_all_scale,load_dataset_format
 
-    def load_parameters_model(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records):
+    def load_parameters_model(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,Frame_2):
+        self.datasets_format_model.delete(0, tk.END)
+        self.datasets_format_model.insert(0, load_dataset_format)
         self.weights.delete(0, tk.END)
         self.weights.insert(0, load_path_weight)
         self.item_code.delete(0, tk.END)
         self.item_code.insert(0, load_item_code)
         self.scale_conf_all.set(load_confidence_all_scale)
-        try:
+        # try:
+        if load_dataset_format == 'AABB':
+            for widget in Frame_2.grid_slaves():
+                widget.grid_forget()
+            self.option_layout_parameters_orient_bounding_box(Frame_2,self.model)
             for i1 in range(len(model1.names)):          
                 for record in records:                
                     if record['label_name'] == model1.names[i1]:
@@ -420,8 +484,35 @@ class Base:
                         self.plc_inputs[i1].delete(0, tk.END)
                         self.plc_inputs[i1].insert(0, record['PLC_value'])
                         self.conf_scales[i1].set(record['cmpnt_conf'])
-        except IndexError as e:
-            messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
+        elif load_dataset_format == 'OBB':
+            for widget in Frame_2.grid_slaves():
+                widget.grid_forget()
+            self.option_layout_parameters_orient_bounding_box(Frame_2,self.model)
+            for i1 in range(len(model1.names)):          
+                for record in records:                
+                    if record['label_name'] == model1.names[i1]:
+                        self.join[i1].set(bool(record['join_detect']))
+                        self.ok_vars[i1].set(bool(record['OK']))
+                        self.ng_vars[i1].set(bool(record['NG']))
+                        self.num_inputs[i1].delete(0, tk.END)
+                        self.num_inputs[i1].insert(0, record['num_labels'])
+                        self.wn_inputs[i1].delete(0, tk.END)
+                        self.wn_inputs[i1].insert(0, record['width_min'])
+                        self.wx_inputs[i1].delete(0, tk.END)
+                        self.wx_inputs[i1].insert(0, record['width_max'])
+                        self.hn_inputs[i1].delete(0, tk.END)
+                        self.hn_inputs[i1].insert(0, record['height_min'])                
+                        self.hx_inputs[i1].delete(0, tk.END)
+                        self.hx_inputs[i1].insert(0, record['height_max'])
+                        self.plc_inputs[i1].delete(0, tk.END)
+                        self.plc_inputs[i1].insert(0, record['PLC_value'])
+                        self.conf_scales[i1].set(record['cmpnt_conf'])
+                        self.rn_inputs[i1].delete(0, tk.END)
+                        self.rn_inputs[i1].insert(0, record['rotage_min'])                
+                        self.rx_inputs[i1].delete(0, tk.END)
+                        self.rx_inputs[i1].insert(0, record['rotage_max'])
+        # except IndexError as e:
+        #     messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
     def change_model(self,Frame_2):
         selected_file = filedialog.askopenfilename(title="Choose a file", filetypes=[("Model Files", "*.pt")])
@@ -435,6 +526,16 @@ class Base:
         else:
             messagebox.showinfo("Notification","Please select the correct training file!")
             pass
+
+    def confirm_dataset_format(self,Frame_2):
+        if self.datasets_format_model.get() == 'OBB':
+            for widget in Frame_2.grid_slaves():
+                widget.grid_forget()
+            self.option_layout_parameters_orient_bounding_box(Frame_2,self.model)
+        elif self.datasets_format_model.get() =='AABB':
+            for widget in Frame_2.grid_slaves():
+                widget.grid_forget()
+            self.option_layout_parameters(Frame_2,self.model)
 
     def load_params_child(self):
         weight = self.weights.get()
@@ -452,25 +553,50 @@ class Base:
         if confirm_load_parameters:
             records, model = self.load_params_child()
             try:
-                for i1 in range(len(model.names)):          
-                    for record in records:                
-                        if record['label_name'] == model.names[i1]:
-                            self.join[i1].set(bool(record['join_detect']))
-                            self.ok_vars[i1].set(bool(record['OK']))
-                            self.ng_vars[i1].set(bool(record['NG']))
-                            self.num_inputs[i1].delete(0, tk.END)
-                            self.num_inputs[i1].insert(0, record['num_labels'])
-                            self.wn_inputs[i1].delete(0, tk.END)
-                            self.wn_inputs[i1].insert(0, record['width_min'])
-                            self.wx_inputs[i1].delete(0, tk.END)
-                            self.wx_inputs[i1].insert(0, record['width_max'])
-                            self.hn_inputs[i1].delete(0, tk.END)
-                            self.hn_inputs[i1].insert(0, record['height_min'])                
-                            self.hx_inputs[i1].delete(0, tk.END)
-                            self.hx_inputs[i1].insert(0, record['height_max'])
-                            self.plc_inputs[i1].delete(0, tk.END)
-                            self.plc_inputs[i1].insert(0, record['PLC_value'])
-                            self.conf_scales[i1].set(record['cmpnt_conf'])
+                if self.datasets_format_model.get() == 'AABB':
+                    for i1 in range(len(model.names)):          
+                        for record in records:                
+                            if record['label_name'] == model.names[i1]:
+                                self.join[i1].set(bool(record['join_detect']))
+                                self.ok_vars[i1].set(bool(record['OK']))
+                                self.ng_vars[i1].set(bool(record['NG']))
+                                self.num_inputs[i1].delete(0, tk.END)
+                                self.num_inputs[i1].insert(0, record['num_labels'])
+                                self.wn_inputs[i1].delete(0, tk.END)
+                                self.wn_inputs[i1].insert(0, record['width_min'])
+                                self.wx_inputs[i1].delete(0, tk.END)
+                                self.wx_inputs[i1].insert(0, record['width_max'])
+                                self.hn_inputs[i1].delete(0, tk.END)
+                                self.hn_inputs[i1].insert(0, record['height_min'])                
+                                self.hx_inputs[i1].delete(0, tk.END)
+                                self.hx_inputs[i1].insert(0, record['height_max'])
+                                self.plc_inputs[i1].delete(0, tk.END)
+                                self.plc_inputs[i1].insert(0, record['PLC_value'])
+                                self.conf_scales[i1].set(record['cmpnt_conf'])
+                elif self.datasets_format_model.get() == 'OBB':
+                    for i1 in range(len(model.names)):          
+                        for record in records:                
+                            if record['label_name'] == model.names[i1]:
+                                self.join[i1].set(bool(record['join_detect']))
+                                self.ok_vars[i1].set(bool(record['OK']))
+                                self.ng_vars[i1].set(bool(record['NG']))
+                                self.num_inputs[i1].delete(0, tk.END)
+                                self.num_inputs[i1].insert(0, record['num_labels'])
+                                self.wn_inputs[i1].delete(0, tk.END)
+                                self.wn_inputs[i1].insert(0, record['width_min'])
+                                self.wx_inputs[i1].delete(0, tk.END)
+                                self.wx_inputs[i1].insert(0, record['width_max'])
+                                self.hn_inputs[i1].delete(0, tk.END)
+                                self.hn_inputs[i1].insert(0, record['height_min'])                
+                                self.hx_inputs[i1].delete(0, tk.END)
+                                self.hx_inputs[i1].insert(0, record['height_max'])
+                                self.plc_inputs[i1].delete(0, tk.END)
+                                self.plc_inputs[i1].insert(0, record['PLC_value'])
+                                self.conf_scales[i1].set(record['cmpnt_conf'])
+                                self.rn_inputs[i1].delete(0, tk.END)
+                                self.rn_inputs[i1].insert(0, record['rotage_min'])                
+                                self.rx_inputs[i1].delete(0, tk.END)
+                                self.rx_inputs[i1].insert(0, record['rotage_max'])
             except IndexError as e:
                 messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 

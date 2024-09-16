@@ -16,6 +16,9 @@ class model1(models.Model):
     height_max = models.IntegerField(null=True, blank=True)
     PLC_value = models.IntegerField(null=True, blank=True)
     cmpnt_conf = models.IntegerField(null=True, blank=True)
+    rotage_min = models.FloatField(null=True, blank=True)
+    rotage_max = models.FloatField(null=True, blank=True)
+    dataset_format = models.CharField(max_length=255,null=True, blank=True)
     
 
 class model2(models.Model):

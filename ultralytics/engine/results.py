@@ -293,7 +293,6 @@ class Results(SimpleClass):
         #         box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
         #         annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
 
-
         # Plot Detect results
         if pred_boxes is not None and show_boxes:     
             valid_pred_boxes = []
@@ -310,10 +309,9 @@ class Results(SimpleClass):
                 if radian: 
                     for r in radian: 
                         rotage = math.degrees(r[4])
-                        print(rotage)
                         c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
                         name = ("" if id is None else f"id:{id} ") + names[c]
-                        label = (f"{name} {conf:.2f} r={int(rotage)}" if conf else name) if labels else None
+                        label = (f"{name} {conf:.2f} r={round(rotage, 1)}" if conf else name) if labels else None
                         box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
                         annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
                 else: 

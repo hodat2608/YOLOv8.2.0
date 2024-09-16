@@ -20,7 +20,7 @@ def copy_file_contents(source_path, destination_path):
         pass
 def open_label_img(): 
     source_path = filedialog.askopenfilename(title="Choose a file", filetypes=[("Model Files", "classes.txt")])
-    destination_path = os.getcwd() + '/labelImg/data/predefined_classes.txt'
+    destination_path = os.getcwd() + '/labelImg_OBB/data/predefined_classes.txt'
     copy_file_contents(source_path,destination_path)
     program_dir = os.path.join(os.getcwd(), 'labelImg_OBB' , 'labelImg.py')         
     subprocess.call(['python',program_dir])
@@ -131,21 +131,21 @@ def display_layout(notebook, window):
     update_progress(step, total_steps)
     tab_camera_1.update_images(window, display_camera_frame1)
 
-    step += 1
-    update_progress(step, total_steps)
-    tab_camera_2 = Model_Camera_2()
-    display_camera_frame2 = tab_camera_2.Display_Camera(tab2)
+    # step += 1
+    # update_progress(step, total_steps)
+    # tab_camera_2 = Model_Camera_2()
+    # display_camera_frame2 = tab_camera_2.Display_Camera(tab2)
 
-    step += 1
-    update_progress(step, total_steps)
-    tab_camera_2.update_images(window, display_camera_frame2)
+    # step += 1
+    # update_progress(step, total_steps)
+    # tab_camera_2.update_images(window, display_camera_frame2)
 
     step += 1
     update_progress(step, total_steps)
     settings_notebook = ttk.Notebook(notebook)
     notebook.add(settings_notebook, text="Camera Configure Setup")
     tab_camera_1.Camera_Settings(settings_notebook)
-    tab_camera_2.Camera_Settings(settings_notebook)
+    # tab_camera_2.Camera_Settings(settings_notebook)
 
     update_progress(total_steps, total_steps)
     progress_var.set(100)

@@ -326,10 +326,10 @@ class Annotator:
                     label,
                     (p1[0], p1[1] - 2 if outside else p1[1] + h - 1),
                     0,
-                    self.sf,
+                    1.2,
                     txt_color,
-                    thickness=self.tf,
-                    lineType=cv2.LINE_AA,
+                    thickness=1,
+                    lineType=8,
                 )
 
     def export_coordinates(self, im, boxes, red=(0, 255, 0), green=(255, 0, 0),arrow_length = 20,thicknes = 2,tipLength=0.5):

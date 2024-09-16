@@ -75,6 +75,7 @@ class Training_Data():
         scrollable_frame.grid_rowconfigure(0, weight=1)
         scrollable_frame.grid_rowconfigure(1, weight=1)
 
+        ###############
         scrollbar = tk.Scrollbar(Frame_2)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -82,9 +83,10 @@ class Training_Data():
         self.console_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         scrollbar.config(command=self.console_widget.yview)
+        ###############
+
         canvas = tk.Canvas(Frame_1)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
         scrollbar_frame_1 = tk.Scrollbar(Frame_1, orient="vertical", command=canvas.yview)
         scrollbar_frame_1.pack(side=tk.RIGHT, fill=tk.Y)
 

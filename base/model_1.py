@@ -24,6 +24,7 @@ import tkinter as tk
 import shutil
 import sys
 import os
+from tkinter import messagebox,simpledialog
 
 
 class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
@@ -34,7 +35,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         torch.cuda.set_device(0)
         self.database = MySQL_Connection("127.0.0.1","root1","987654321","connect_database_model") 
         self.name_table = 'model_connection_model1'
-        self.item_code_cfg = "EDFWTA"
+        self.item_code_cfg = "EDFWOBB"
         self.image_files = []
         self.current_image_index = -1
         self.state = 1
@@ -52,9 +53,12 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.hx_inputs = []
         self.plc_inputs = []
         self.conf_scales = []
+        self.rn_inputs = []
+        self.rx_inputs = []
         self.widgets_option_layout_parameters = []
         self.row_widgets = []
         self.weights = []
+        self.datasets_format_model = []
         self.scale_conf_all = None
         self.size_model = None
         self.item_code = []
@@ -65,6 +69,15 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.result_detection = None
         self.cls = False
         self.device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.process_image_func = None
+        self.processing_functions = {
+            'AABB': self.processing_handle_image_customize,
+            'OBB': self.processing_handle_image_customize_obb
+        }
+
+    def on_option_change(self, event):
+        selected_format = self.datasets_format_model.get()
+        self.process_image_func = self.processing_functions.get(selected_format, None)
     
     def mohica(self):
         filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
@@ -83,7 +96,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 img1_orgin = cv2.imread(filename)
                 for widget in camera_frame.winfo_children():
                     widget.destroy()
-                image_result,results_detect,list_label_ng = self.processing_handle_image_customize(img1_orgin,width,height)
+                image_result, results_detect, list_label_ng = self.process_image_func(img1_orgin, width, height)
                 t2 = time.time() - t1
                 time_processing = str(int(t2*1000)) + 'ms'
                 self.time_processing_output.config(text=f'{time_processing}')
@@ -92,9 +105,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 else:
                     self.result_detection.config(text=results_detect,fg='red')
                 list_label_ng = ','.join(list_label_ng)
-                print('image_result',image_result)
                 img_pil = Image.fromarray(image_result)
-                print('img_pil',img_pil)
                 photo = ImageTk.PhotoImage(img_pil)
                 canvas = tk.Canvas(camera_frame, width=width, height=height)
                 canvas.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
@@ -166,8 +177,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def load_data_model(self):
         return super().load_data_model()
     
-    def load_parameters_model(self, model1, load_path_weight, load_item_code, load_confidence_all_scale, records):
-        return super().load_parameters_model(model1, load_path_weight, load_item_code, load_confidence_all_scale, records)
+    def load_parameters_model(self, model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,Frame_2):
+        return super().load_parameters_model(model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,Frame_2)
     
     def change_model(self, Frame_2):
         return super().change_model(Frame_2)
@@ -216,18 +227,23 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def classify_imgs(self):
         return super().classify_imgs()
+    
+    def datasets_format_model_confirm(self, Frame_2):
+        return super().confirm_dataset_format(Frame_2)
        
-    def Camera_Settings(self,settings_notebook):
-        records,load_path_weight,load_item_code,load_confidence_all_scale = self.load_data_model()
+    def Camera_Settings(self, settings_notebook):
+        records, load_path_weight, load_item_code, load_confidence_all_scale,load_dataset_format = self.load_data_model()
         self.model = YOLO(load_path_weight, task='detect').to(device=self.device1)
-        filename =r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
-        self.model(filename,imgsz=608,conf=0.2)
+        filename = r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
+        self.model(filename, imgsz=608, conf=0.2)
         print('Load model 1 successfully')
+
         camera_settings_tab = ttk.Frame(settings_notebook)
         settings_notebook.add(camera_settings_tab, text="Camera 1")
 
         canvas1 = tk.Canvas(camera_settings_tab)
-        scrollbar = ttk.Scrollbar(camera_settings_tab, orient="vertical", command=canvas1.yview)
+        scrollbar_y = ttk.Scrollbar(camera_settings_tab, orient="vertical", command=canvas1.yview)
+        scrollbar_x = ttk.Scrollbar(camera_settings_tab, orient="horizontal", command=canvas1.xview)
         scrollable_frame = ttk.Frame(canvas1)
 
         scrollable_frame.bind(
@@ -236,12 +252,14 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 scrollregion=canvas1.bbox("all")
             )
         )
-        canvas1.bind_all("<MouseWheel>", lambda event: canvas1.yview_scroll(int(-1*(event.delta/120)), "units"))
+
+        canvas1.bind_all("<MouseWheel>", lambda event: canvas1.yview_scroll(int(-1 * (event.delta / 120)), "units"))
         canvas1.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas1.configure(yscrollcommand=scrollbar.set)
+        canvas1.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
 
         canvas1.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
+        scrollbar_y.grid(row=0, column=1, sticky="ns")
+        scrollbar_x.grid(row=1, column=0, sticky="ew")
 
         camera_settings_tab.grid_columnconfigure(0, weight=1)
         camera_settings_tab.grid_rowconfigure(0, weight=1)
@@ -252,17 +270,18 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         Frame_1 = ttk.LabelFrame(scrollable_frame, text="Frame 1", width=frame_width, height=frame_height)
         Frame_2 = ttk.LabelFrame(scrollable_frame, text="Frame 2", width=frame_width, height=frame_height)
 
-        Frame_1.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")  
+        Frame_1.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         Frame_2.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-           
+
         scrollable_frame.grid_columnconfigure(0, weight=1)
         scrollable_frame.grid_columnconfigure(1, weight=1)
         scrollable_frame.grid_rowconfigure(0, weight=1)
-        scrollable_frame.grid_rowconfigure(1, weight=1)
 
         self.option_layout_models(Frame_1,Frame_2,records)
         self.option_layout_parameters(Frame_2,self.model)
-        self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records)
+        self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,Frame_2)
+        self.datasets_format_model.bind("<<ComboboxSelected>>", self.on_option_change)
+        self.on_option_change(None)
         self.toggle_state_option_layout_parameters()
 
 
@@ -273,12 +292,16 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
 
         ttk.Label(datasets_format, text='Dataset Formats:', font=('ubuntu', 12), width=15 ).grid(column=0, row=1, padx=10, pady=5, sticky="w")
 
-        option_datasets_format = ['BASE Dataset Format','OBB Dataset Format']
+        option_datasets_format = ['AABB', 'OBB']
         self.datasets_format_model = ttk.Combobox(datasets_format, values=option_datasets_format, width=7)
-        self.datasets_format_model.grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=40, ipady=2)
+        self.datasets_format_model.grid(row=1, column=2, padx=(0, 10), pady=5, sticky="w", ipadx=40, ipady=2)
 
+        datasets_format_model_button = tk.Button(datasets_format, text="Confirm", command=lambda: self.datasets_format_model_confirm(Frame_2))
+        datasets_format_model_button.grid(row=1, column=3, padx=(0, 8), pady=3, sticky="w", ipadx=5, ipady=2)
+        datasets_format_model_button.config(state="disabled")
+        self.lockable_widgets.append(datasets_format_model_button)
 
-        ttk.Label(Frame_1, text='File train detect model', font=('Segoe UI', 12)).grid(column=0, row=0, padx=10, pady=5, sticky="nws")
+        ttk.Label(Frame_1, text='Model Path', font=('Segoe UI', 12)).grid(column=0, row=0, padx=10, pady=5, sticky="nws")
 
         self.weights = ttk.Entry(Frame_1, width=60)
         self.weights.grid(row=2, column=0, columnspan=5, padx=(30, 5), pady=5, sticky="w", ipadx=20, ipady=2)
@@ -304,7 +327,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.permisson_btn = tk.Button(button_frame, text="Unlock", command=lambda: self.toggle_state_layout_model())
         self.permisson_btn.grid(row=0, column=3, padx=(0, 8), pady=5, sticky="w", ipadx=5, ipady=2)
 
-        label_scale_conf_all = ttk.Label(Frame_1, text='Confidence Threshold', font=('Segoe UI', 12))
+        label_scale_conf_all = ttk.Label(Frame_1, text='Confidence', font=('Segoe UI', 12))
         label_scale_conf_all.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="nws")
 
         self.scale_conf_all = tk.Scale(Frame_1, from_=1, to=100, orient='horizontal', length=400)
@@ -561,6 +584,177 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             self.conf_scales.append(conf_scale)
             self.lock_params.append(conf_scale)
             self.lockable_widgets.append(conf_scale)
+
+            widgets_option_layout_parameters.append(row_widgets)
+
+            for i, row in enumerate(widgets_option_layout_parameters):
+                for j, widget in enumerate(row):
+                    widget.grid(row=i+1, column=j, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+    def option_layout_parameters_orient_bounding_box(self,Frame_2,model):
+        
+        def ng_selected(row_widgets):
+            ok_checkbox_var = row_widgets[2].var
+            ng_checkbox_var = row_widgets[3].var
+            if ng_checkbox_var.get() == True:
+                ok_checkbox_var.set(False)
+
+        def ok_selected(row_widgets):
+            ok_checkbox_var = row_widgets[2].var
+            ng_checkbox_var = row_widgets[3].var
+            if ok_checkbox_var.get() == True:
+                ng_checkbox_var.set(False)
+    
+        label = tk.Label(Frame_2, text='LABEL', fg='red', font=('Ubuntu', 12), width=12, anchor='center', relief="groove", borderwidth=2)
+        label.grid(row=0, column=0, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        joint_detect = tk.Label(Frame_2, text='join', fg='red', font=('Ubuntu', 12), anchor='center', relief="groove", borderwidth=2)
+        joint_detect.grid(row=0, column=1, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        ok_joint = tk.Label(Frame_2, text='OK', fg='red', font=('Ubuntu', 12), anchor='center', relief="groove", borderwidth=2)
+        ok_joint.grid(row=0, column=2, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        ng_joint = tk.Label(Frame_2, text='NG', fg='red', font=('Ubuntu', 12), anchor='center', relief="groove", borderwidth=2)
+        ng_joint.grid(row=0, column=3, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        num_lb = tk.Label(Frame_2, text='NUM', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        num_lb.grid(row=0, column=4, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        width_n = tk.Label(Frame_2, text='W_N', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        width_n.grid(row=0, column=5, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        wight_x= tk.Label(Frame_2, text='W_X', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        wight_x.grid(row=0, column=6, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        height_n = tk.Label(Frame_2, text='H_N', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        height_n.grid(row=0, column=7, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        height_x = tk.Label(Frame_2, text='H_X', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        height_x.grid(row=0, column=8, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        plc_var = tk.Label(Frame_2, text='PLC', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        plc_var.grid(row=0, column=9, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        conf = tk.Label(Frame_2, text='CONFI', fg='red', font=('Ubuntu', 12), width=15, anchor='center', relief="groove", borderwidth=2)
+        conf.grid(row=0, column=10, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        rotage_n = tk.Label(Frame_2, text='R_N', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        rotage_n.grid(row=0, column=11, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        rotage_x= tk.Label(Frame_2, text='R_X', fg='red', font=('Ubuntu', 12), width=7, anchor='center', relief="groove", borderwidth=2)
+        rotage_x.grid(row=0, column=12, padx=15, pady=5, sticky="w", ipadx=2, ipady=2)
+
+        widgets_option_layout_parameters = []
+
+        self.model_name_labels.clear()
+        self.join.clear()
+        self.ok_vars.clear()
+        self.ng_vars.clear()
+        self.num_inputs.clear()
+        self.wn_inputs.clear()
+        self.wx_inputs.clear()
+        self.hn_inputs.clear()
+        self.hx_inputs.clear()
+        self.plc_inputs.clear()
+        self.conf_scales.clear()
+        self.rn_inputs.clear()
+        self.rx_inputs.clear()
+
+        for i1 in range(len(model.names)):
+            row_widgets = []
+
+            model_name_label = tk.Label(Frame_2, text=f'{model.names[i1]}', fg='black', font=('Segoe UI', 12), width=15, anchor='w')
+            row_widgets.append(model_name_label)
+            self.model_name_labels.append(model_name_label)
+
+            join_checkbox_var = tk.BooleanVar()
+            join_checkbox = tk.Checkbutton(Frame_2, variable=join_checkbox_var, onvalue=True, offvalue=False,anchor='w')
+            join_checkbox.grid()
+            join_checkbox.var = join_checkbox_var
+            row_widgets.append(join_checkbox)
+            self.join.append(join_checkbox_var)
+            self.lock_params.append(join_checkbox)
+            self.lockable_widgets.append(join_checkbox)
+
+            ok_checkbox_var = tk.BooleanVar()
+            ok_checkbox = tk.Checkbutton(Frame_2, variable=ok_checkbox_var, onvalue=True, offvalue=False, anchor='w')
+            ok_checkbox.grid()
+            ok_checkbox.var = ok_checkbox_var
+            row_widgets.append(ok_checkbox)
+            self.ok_vars.append(ok_checkbox_var)
+            self.lock_params.append(ok_checkbox)
+            self.lockable_widgets.append(ok_checkbox)
+
+            ng_checkbox_var = tk.BooleanVar()
+            ng_checkbox = tk.Checkbutton(Frame_2, variable=ng_checkbox_var, onvalue=True, offvalue=False, anchor='w')
+            ng_checkbox.grid()
+            ng_checkbox.var = ng_checkbox_var
+            row_widgets.append(ng_checkbox)
+            self.ng_vars.append(ng_checkbox_var)
+            self.lock_params.append(ng_checkbox)
+            self.lockable_widgets.append(ng_checkbox)
+
+            num_input = tk.Entry(Frame_2, width=7,)
+            num_input.insert(0, '1')
+            row_widgets.append(num_input)
+            self.num_inputs.append(num_input)
+            self.lock_params.append(num_input)
+            self.lockable_widgets.append(num_input)
+
+            wn_input = tk.Entry(Frame_2, width=7, )
+            wn_input.insert(0, '0')
+            row_widgets.append(wn_input)
+            self.wn_inputs.append(wn_input)
+            self.lock_params.append(wn_input)
+            self.lockable_widgets.append(wn_input)
+
+            wx_input = tk.Entry(Frame_2, width=7, )
+            wx_input.insert(0, '1600')
+            row_widgets.append(wx_input)
+            self.wx_inputs.append(wx_input)
+            self.lock_params.append(wx_input)
+            self.lockable_widgets.append(wx_input)
+
+            hn_input = tk.Entry(Frame_2, width=7, )
+            hn_input.insert(0, '0')
+            row_widgets.append(hn_input)
+            self.hn_inputs.append(hn_input)
+            self.lock_params.append(hn_input)
+            self.lockable_widgets.append(hn_input)
+
+            hx_input = tk.Entry(Frame_2, width=7, )
+            hx_input.insert(0, '1200')
+            row_widgets.append(hx_input)
+            self.hx_inputs.append(hx_input)
+            self.lock_params.append(hx_input)
+            self.lockable_widgets.append(hx_input)
+
+            plc_input = tk.Entry(Frame_2, width=7,)
+            plc_input.insert(0, '0')
+            row_widgets.append(plc_input)
+            self.plc_inputs.append(plc_input)
+            self.lock_params.append(plc_input)
+            self.lockable_widgets.append(plc_input)
+
+            conf_scale = tk.Scale(Frame_2, from_=1, to=100, orient='horizontal', length=150)
+            row_widgets.append(conf_scale)
+            self.conf_scales.append(conf_scale)
+            self.lock_params.append(conf_scale)
+            self.lockable_widgets.append(conf_scale)
+
+            rn_input = tk.Entry(Frame_2, width=7,)
+            rn_input.insert(0, '0.0')
+            row_widgets.append(rn_input)
+            self.rn_inputs.append(rn_input)
+            self.lock_params.append(rn_input)
+            self.lockable_widgets.append(rn_input)
+
+            rx_input = tk.Entry(Frame_2, width=7,)
+            rx_input.insert(0, '0.0')
+            row_widgets.append(rx_input)
+            self.rx_inputs.append(rx_input)
+            self.lock_params.append(rx_input)
+            self.lockable_widgets.append(rx_input)
 
             widgets_option_layout_parameters.append(row_widgets)
 
