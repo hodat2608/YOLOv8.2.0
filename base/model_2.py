@@ -73,7 +73,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
                 img1_orgin = cv2.imread(filename)
                 for widget in camera_frame.winfo_children():
                     widget.destroy()
-                image_result,results_detect,list_label_ng = self.processing_handle_image_customize(img1_orgin,width,height)
+                image_result,results_detect,list_label_ng = self.handle_image_customize(img1_orgin,width,height)
                 t2 = time.time() - t1
                 time_processing = str(int(t2*1000)) + 'ms'
                 self.time_processing_output.config(text=f'{time_processing}')
@@ -146,8 +146,8 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
     def save_params_model(self):
         return super().save_params_model()
     
-    def processing_handle_image_customize(self, input_image, width, height):
-        return super().processing_handle_image_customize(input_image, width, height)
+    def handle_image_customize(self, input_image, width, height):
+        return super().handle_image_customize(input_image, width, height)
     
     # def load_data_model(self):
     #     return super().load_data_model()

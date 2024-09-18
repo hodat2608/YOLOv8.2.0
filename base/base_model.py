@@ -201,6 +201,7 @@ class Base:
         self.conf_scales = []
         self.rn_inputs = []
         self.rx_inputs = []
+        self.rotage_join = []
         self.widgets_option_layout_parameters = []
         self.row_widgets = []
         self.weights = []
@@ -323,7 +324,7 @@ class Base:
         else:
             pass
 
-    def processing_handle_image_customize(self, input_image, width, height):
+    def handle_image_customize(self, input_image, width, height):
         size_model_all = int(self.size_model.get())
         conf_all = int(self.scale_conf_all.get()) / 100
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
@@ -349,18 +350,18 @@ class Base:
         cls_list = boxes_dict.cls.tolist()
         conf_list = boxes_dict.conf.tolist()
         allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
-        for xywh, cls, conf in zip(xywh_list, cls_list, conf_list):
+        for index, (xywh, cls, conf) in enumerate(reversed(list(zip(xywh_list, cls_list, conf_list)))):
             setting = settings_dict[results[0].names[int(cls)]]
             if setting:
                 if setting['join_detect']:
                     if xywh[2] < setting['width_min'] or xywh[2] > setting['width_max'] \
                             or xywh[3] < setting['height_min'] or xywh[3] > setting['height_max'] \
                             or int(conf*100) < setting['cmpnt_conf']:
-                        list_remove.append(int(cls))
+                        list_remove.append(int(index))
                         continue
                     allowed_classes.append(results[0].names[int(cls)])
                 else:
-                    list_remove.append(int(cls))           
+                    list_remove.append(int(index))           
         for model_name,setting in settings_dict.items():
             if setting['join_detect'] and setting['OK_jont']:
                 if allowed_classes.count(setting['label_name']) != setting['num_labels']:
@@ -377,7 +378,7 @@ class Base:
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
         return output_image, results_detect, list_label_ng
     
-    def processing_handle_image_customize_obb(self, input_image, width, height):
+    def handle_image_customize_obb(self, input_image, width, height):
         size_model_all = int(self.size_model.get())
         conf_all = int(self.scale_conf_all.get()) / 100
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
@@ -401,28 +402,26 @@ class Base:
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         obb_dict = results[0].obb.cpu().numpy()
-        print('obb_dict',obb_dict)
         xywhr_list = obb_dict.xywhr.tolist()
         cls_list = obb_dict.cls.tolist()
         conf_list = obb_dict.conf.tolist()
         allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
-        for xywhr, cls, conf in zip(xywhr_list, cls_list, conf_list):
+        for index, (xywhr, cls, conf) in enumerate(reversed(list(zip(xywhr_list, cls_list, conf_list)))):
             setting = settings_dict[results[0].names[int(cls)]]
             if setting:
                 if setting['join_detect']:
                     if xywhr[2] < setting['width_min'] or xywhr[2] > setting['width_max'] \
                             or xywhr[3] < setting['height_min'] or xywhr[3] > setting['height_max'] \
                             or int(conf*100) < setting['cmpnt_conf']:
-                        list_remove.append(int(cls))
-                        continue
-                    elif float(round(math.degrees(xywhr[4]),1)) < setting['rotage_min'] or float(round(math.degrees(xywhr[4]),1)) > setting['rotage_max']:
+                        list_remove.append(int(index))
+                    if float(round(math.degrees(xywhr[4]),1)) < setting['rotage_min'] or float(round(math.degrees(xywhr[4]),1)) > setting['rotage_max']:
                         results_detect,ok_variable = 'NG',True
                         list_label_ng.append(setting['label_name'])   
                     allowed_classes.append(results[0].names[int(cls)])
                 else:
-                    list_remove.append(int(cls))           
+                    list_remove.append(int(index))   
         for model_name,setting in settings_dict.items():
-            if setting['join_detect'] and setting['OK_jont']:
+            if setting['join_detect'] and setting['OK_jont']: 
                 if allowed_classes.count(setting['label_name']) != setting['num_labels']:
                     results_detect,ok_variable = 'NG',True
                     list_label_ng.append(model_name)
@@ -430,6 +429,7 @@ class Base:
                 if model_name in allowed_classes:
                     results_detect,ok_variable = 'NG',True
                     list_label_ng.append(setting['label_name'])
+    
         if not ok_variable:
             results_detect = 'OK'
         show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
@@ -464,7 +464,7 @@ class Base:
         if load_dataset_format == 'AABB':
             for widget in Frame_2.grid_slaves():
                 widget.grid_forget()
-            self.option_layout_parameters_orient_bounding_box(Frame_2,self.model)
+            self.option_layout_parameters(Frame_2,self.model)
             for i1 in range(len(model1.names)):          
                 for record in records:                
                     if record['label_name'] == model1.names[i1]:

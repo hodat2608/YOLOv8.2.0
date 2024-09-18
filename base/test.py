@@ -25,8 +25,8 @@ import os
 import glob
 import shutil
 
-txt_path = r"C:\Users\CCSX009\Pictures\Saved Pictures\ok\TEMP\New folder\Image_bonu20240914085107656.txt"
-folder_img_path = r'C:\Users\CCSX009\Pictures\Saved Pictures\ok\TEMP'
+txt_path = r"C:\Users\CCSX009\Pictures\Saved Pictures\nghieng\TEMP\New folder\Image_bonu20240914085953885.txt"
+folder_img_path = r'C:\Users\CCSX009\Pictures\Saved Pictures\nghieng\TEMP'
 
 # Duyệt qua tất cả các file ảnh .jpg trong thư mục
 for img_path in glob.glob(os.path.join(folder_img_path, '*.jpg')):

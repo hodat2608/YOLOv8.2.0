@@ -296,9 +296,9 @@ class Results(SimpleClass):
         # Plot Detect results
         if pred_boxes is not None and show_boxes:     
             valid_pred_boxes = []
-            for d in reversed(pred_boxes):
+            for index, d in enumerate(reversed(pred_boxes)):
                 c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-                if c in list_remove:
+                if index in list_remove:
                     continue
                 valid_pred_boxes.append(d)
             for d in valid_pred_boxes:
@@ -311,15 +311,15 @@ class Results(SimpleClass):
                         rotage = math.degrees(r[4])
                         c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
                         name = ("" if id is None else f"id:{id} ") + names[c]
-                        label = (f"{name} {conf:.2f} r={round(rotage, 1)}" if conf else name) if labels else None
+                        label = (f"{name} {conf:.2f}" if conf else name) if labels else None
                         box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                        annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                        annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle=round(rotage,1),is_angle=True)
                 else: 
                     c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
                     name = ("" if id is None else f"id:{id} ") + names[c]
                     label = (f"{name} {conf:.2f}" if conf else name) if labels else None
                     box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                    annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                    annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle='',is_angle=False)
 
         # Plot Classify results
         if pred_probs is not None and show_probs:

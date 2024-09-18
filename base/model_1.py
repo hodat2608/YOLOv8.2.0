@@ -55,6 +55,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.conf_scales = []
         self.rn_inputs = []
         self.rx_inputs = []
+        self.rotage_join = []
         self.widgets_option_layout_parameters = []
         self.row_widgets = []
         self.weights = []
@@ -71,8 +72,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.process_image_func = None
         self.processing_functions = {
-            'AABB': self.processing_handle_image_customize,
-            'OBB': self.processing_handle_image_customize_obb
+            'AABB': self.handle_image_customize,
+            'OBB': self.handle_image_customize_obb
         }
 
     def on_option_change(self, event):
@@ -81,7 +82,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def mohica(self):
         filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
-        filename = r"C:\Users\CCSX009\Music\2024-01-20_14-17-12-491553-C1.jpg"
+        filename = r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240914085117319 - Copy.jpg"
         shutil.copy(filename,filepath)
 
     def display_images_c1(self, camera_frame, camera_number):
@@ -168,11 +169,11 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def save_params_model(self):
         return super().save_params_model()
     
-    def processing_handle_image_customize(self, input_image, width, height):
-        return super().processing_handle_image_customize(input_image, width, height)
+    def handle_image_customize(self, input_image, width, height):
+        return super().handle_image_customize(input_image, width, height)
     
-    def processing_handle_image_customize_obb(self, input_image, width, height):
-        return super().processing_handle_image_customize_obb(input_image, width, height)
+    def handle_image_customize_obb(self, input_image, width, height):
+        return super().handle_image_customize_obb(input_image, width, height)
     
     def load_data_model(self):
         return super().load_data_model()
@@ -552,7 +553,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             self.lockable_widgets.append(wn_input)
 
             wx_input = tk.Entry(Frame_2, width=7, )
-            wx_input.insert(0, '1600')
+            wx_input.insert(0, '0')
             row_widgets.append(wx_input)
             self.wx_inputs.append(wx_input)
             self.lock_params.append(wx_input)
@@ -566,7 +567,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             self.lockable_widgets.append(hn_input)
 
             hx_input = tk.Entry(Frame_2, width=7, )
-            hx_input.insert(0, '1200')
+            hx_input.insert(0, '0')
             row_widgets.append(hx_input)
             self.hx_inputs.append(hx_input)
             self.lock_params.append(hx_input)
@@ -659,7 +660,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.conf_scales.clear()
         self.rn_inputs.clear()
         self.rx_inputs.clear()
-
+        self.rotage_join.clear()
         for i1 in range(len(model.names)):
             row_widgets = []
 
@@ -743,18 +744,27 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             self.lockable_widgets.append(conf_scale)
 
             rn_input = tk.Entry(Frame_2, width=7,)
-            rn_input.insert(0, '0.0')
+            rn_input.insert(0, '-360.0')
             row_widgets.append(rn_input)
             self.rn_inputs.append(rn_input)
             self.lock_params.append(rn_input)
             self.lockable_widgets.append(rn_input)
 
             rx_input = tk.Entry(Frame_2, width=7,)
-            rx_input.insert(0, '0.0')
+            rx_input.insert(0, '-360.0')
             row_widgets.append(rx_input)
             self.rx_inputs.append(rx_input)
             self.lock_params.append(rx_input)
             self.lockable_widgets.append(rx_input)
+
+            # rotage_checkbox_var = tk.BooleanVar()
+            # rotage_join_checkbox = tk.Checkbutton(Frame_2, variable=rotage_checkbox_var, onvalue=True, offvalue=False, anchor='w')
+            # rotage_join_checkbox.grid()
+            # rotage_join_checkbox.var = rotage_checkbox_var
+            # row_widgets.append(rotage_join_checkbox)
+            # self.rotage_join.append(rotage_checkbox_var)
+            # self.lock_params.append(rotage_join_checkbox)
+            # self.lockable_widgets.append(rotage_join_checkbox)
 
             widgets_option_layout_parameters.append(row_widgets)
 
