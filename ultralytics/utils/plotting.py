@@ -415,10 +415,8 @@ class Annotator:
             cv2.arrowedLine(im, (int(round(box[0])), int(round(box[1]))), (int(round(box[0])), int(round(box[1])) - arrow_length), color=green, thickness=thicknes, tipLength=tipLength)
             cv2.putText(im, f"({int(round(box[0]))}, {int(round(box[1]))})", (int(round(box[0])) + 10, int(round(box[1])) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
             if prev_point is not None:
-                cv2.line(im, prev_point, current_point, (0, 0, 255), 2)  # Vẽ đường màu đỏ
+                cv2.line(im, prev_point, current_point, (0, 0, 255), 2) 
                 print(prev_point, current_point)
-
-        # Cập nhật điểm hiện tại thành điểm trước đó cho vòng lặp tiếp theo
             prev_point = current_point
         return im
     

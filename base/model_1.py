@@ -231,14 +231,14 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     
     def datasets_format_model_confirm(self, Frame_2):
         return super().confirm_dataset_format(Frame_2)
+    
+    def load_first_img(self):
+        return super().load_first_img()
        
     def Camera_Settings(self, settings_notebook):
         records, load_path_weight, load_item_code, load_confidence_all_scale,load_dataset_format = self.load_data_model()
         self.model = YOLO(load_path_weight, task='detect').to(device=self.device1)
-        filename = r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
-        self.model(filename, imgsz=608, conf=0.2)
-        print('Load model 1 successfully')
-
+        self.load_first_img()
         camera_settings_tab = ttk.Frame(settings_notebook)
         settings_notebook.add(camera_settings_tab, text="Camera 1")
 
