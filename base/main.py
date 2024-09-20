@@ -9,7 +9,8 @@ from tkinter import *
 from tkinter import *
 import os,subprocess
 from tkinter import filedialog
-from tkinter import messagebox,simpledialog
+from tkinter import messagebox
+
 def copy_file_contents(source_path, destination_path):
     try:
         with open(source_path, 'r') as source_file:

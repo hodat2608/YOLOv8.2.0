@@ -16,8 +16,12 @@ import threading
 from base.config import *
 import numpy as np
 import cv2
-class Training_Data():
+from base.base_model import *
+
+class Training_Data(Base):
     def __init__(self, *args, **kwargs):
+        super(Training_Data, self).__init__(*args, **kwargs)
+        super().__init__()
         torch.cuda.set_device(0)
         self.device_recognize = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.current_dir = os.getcwd()
@@ -34,6 +38,9 @@ class Training_Data():
         self.source_save_result_entry=None
         self.excute_button=None
         self.myclasses = []
+
+    def format_params_xywhr2xyxyxyxy(self, des_path, progress_label):
+        return super().format_params_xywhr2xyxyxyxy(des_path, progress_label)
 
     def layout(self,settings_notebook,window):
        
@@ -478,7 +485,7 @@ class Training_Data():
                     dst_file = os.path.join(des_path, filename)
                     shutil.copy2(src_file, dst_file)
             
-            self.format_params(des_path,progress_label)
+            self.format_params_xywhr2xyxyxyxy(des_path,progress_label)
 
             try:
                 folders = ['train/images', 'train/labels', 'valid/images', 'valid/labels']
@@ -558,55 +565,6 @@ class Training_Data():
         if command.startswith("pip install"):
             command = f"python -m {command}"
         threading.Thread(target=self.run_command, args=(command,)).start()
-
-    def xywhr2xyxyxyxy(self,class_id,x_center,y_center,width,height,angle,im_height,im_width):
-        half_width = width / 2
-        half_height = height / 2
-        angle_rad = np.deg2rad(angle)
-        rotation_matrix = np.array([
-            [np.cos(angle_rad), -np.sin(angle_rad)],
-            [np.sin(angle_rad), np.cos(angle_rad)]
-        ])
-        corners = np.array([
-            [-half_width, -half_height],  
-            [half_width, -half_height], 
-            [half_width, half_height],   
-            [-half_width, half_height]
-        ])
-        rotated_corners = np.dot(corners, rotation_matrix)
-        final_corners = rotated_corners + np.array([x_center, y_center])
-        normalized_corners = final_corners / np.array([im_width,im_height])
-        return [int(class_id)] + normalized_corners.flatten().tolist()
-
-    def format_params(self,des_path,progress_label):
-        input_folder = des_path
-        os.makedirs(os.path.join(input_folder,'instance'),exist_ok=True)
-        output_folder = (os.path.join(input_folder,'instance'))
-        total_fl = len(des_path) 
-        for index,txt_file in enumerate(os.listdir(input_folder)):
-            if txt_file.endswith('.txt'):
-                if txt_file == 'classes.txt':
-                    continue
-                input_path = os.path.join(input_folder, txt_file)
-                im = cv2.imread(input_path[:-4]+'.jpg')
-                im_height, im_width, _ = im.shape
-                output_path = os.path.join(output_folder, txt_file)
-                with open(input_path, 'r') as file:
-                    lines = file.readlines()
-                with open(output_path, 'w') as out_file:
-                    for line in lines:
-                        line = line.strip()
-                        if "YOLO_OBB" in line:
-                            continue
-                        params = list(map(float, line.split()))
-                        class_id,x_center,y_center,width,height,angle = params
-                        converted_label = self.xywhr2xyxyxyxy(class_id,x_center,y_center,width,height,angle,im_height,im_width)
-                        out_file.write(" ".join(map(str, converted_label)) + '\n')
-                progress_retail = (index + 1) / total_fl * 100
-                progress_label.config(text=f"Converting YOLO OBB Dataset Format to DOTA Format: {progress_retail:.2f}%")
-                progress_label.update_idletasks()
-                os.replace(output_path, input_path)
-        shutil.rmtree(output_folder)
 
     def Excute(self, progress_label):
         dataset_format = self.datasets_format_model.get()

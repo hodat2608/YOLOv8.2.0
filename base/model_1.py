@@ -25,7 +25,7 @@ import shutil
 import sys
 import os
 from tkinter import messagebox,simpledialog
-
+from functools import partial 
 
 class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
 
@@ -76,13 +76,15 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             'OBB': self.handle_image_customize_obb
         }
 
-    def on_option_change(self, event):
+    def on_option_change(self, event,Frame_2):
         selected_format = self.datasets_format_model.get()
         self.process_image_func = self.processing_functions.get(selected_format, None)
-    
+        self.datasets_format_model_confirm(Frame_2)
+        super().process_func_local(selected_format)
+        
     def mohica(self):
         filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
-        filename = r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240914085117319 - Copy.jpg"
+        filename = r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240914085107656 - Copy (2).jpg"
         shutil.copy(filename,filepath)
 
     def display_images_c1(self, camera_frame, camera_number):
@@ -98,9 +100,7 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 for widget in camera_frame.winfo_children():
                     widget.destroy()
                 image_result, results_detect, list_label_ng = self.process_image_func(img1_orgin, width, height)
-                t2 = time.time() - t1
-                time_processing = str(int(t2*1000)) + 'ms'
-                self.time_processing_output.config(text=f'{time_processing}')
+                
                 if results_detect == 'OK':
                     self.result_detection.config(text=results_detect,fg='green')
                 else:
@@ -112,6 +112,9 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 canvas.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
                 canvas.create_image(0, 0, anchor=tk.NW, image=photo)
                 canvas.image = photo
+                t2 = time.time() - t1
+                time_processing = str(int(t2*1000)) + 'ms'
+                self.time_processing_output.config(text=f'{time_processing}')
                 canvas.create_text(10, 10, anchor=tk.NW, text=f'Time: {time_processing}', fill='black', font=('Segoe UI', 20))
                 canvas.create_text(10, 40, anchor=tk.NW, text=f'Result: {results_detect}', fill='green' if results_detect == 'OK' else 'red', font=('Segoe UI', 20))
                 canvas.create_text(10, 70, anchor=tk.NW, text=f'Label: {list_label_ng}', fill='red', font=('Segoe UI', 20))
@@ -149,6 +152,9 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
 
         bonus_test = tk.Label(bonus, text='Bonus', fg='red', font=('Segoe UI', 30), width=10, height=1, anchor='center')
         bonus_test.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
+
+        move = tk.Button(bonus, text="Test time handle", command=lambda: self.mohica())
+        move.grid(row=0, column=1, padx=(0, 8), pady=3, sticky="w", ipadx=5, ipady=2)
 
         frame_1.grid_columnconfigure(0, weight=1)
         frame_1.grid_columnconfigure(1, weight=1)
@@ -279,10 +285,10 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         scrollable_frame.grid_rowconfigure(0, weight=1)
 
         self.option_layout_models(Frame_1,Frame_2,records)
+        self.datasets_format_model.bind("<<ComboboxSelected>>", partial(self.on_option_change, Frame_2=Frame_2))
+        self.on_option_change(None, Frame_2)
         self.option_layout_parameters(Frame_2,self.model)
         self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,Frame_2)
-        self.datasets_format_model.bind("<<ComboboxSelected>>", self.on_option_change)
-        self.on_option_change(None)
         self.toggle_state_option_layout_parameters()
 
 
@@ -440,8 +446,6 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         folder_ng_button.config(state="disabled")
         self.lockable_widgets.append(folder_ng_button)
 
-        move = tk.Button(logging_frame, text="action", command=lambda: self.mohica())
-        move.grid(row=3, column=0, padx=(0, 8), pady=3, sticky="w", ipadx=5, ipady=2)
 
     def option_layout_parameters(self,Frame_2,model):
         

@@ -209,7 +209,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
     def classify_imgs(self):
         return super().classify_imgs()
     
-    def processing_handle_image_local(self, input_image_original, width, height, cls=False):
+    def handle_image_local(self, input_image_original, width, height, cls=False):
         return super().processing_handle_image_local(input_image_original, width, height, cls)
     
     def Camera_Settings(self,settings_notebook):
