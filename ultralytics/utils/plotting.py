@@ -397,14 +397,17 @@ class Annotator:
                     thickness=1,
                     lineType=8,
                 )
-                # if is_angle:
-                #     image_pil = Image.fromarray(cv2.cvtColor(self.im, cv2.COLOR_BGR2RGB))
-                #     draw = ImageDraw.Draw(image_pil)
-                #     font_path = "arial.ttf"
-                #     font = ImageFont.truetype(font_path, 28)
-                #     text = f'∠={str(angle)}\u00B0'
-                #     draw.text((x_center - 50, y_center), text, font=font, fill=(0, 255, 0))
-                #     self.im = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+                if is_angle:
+                    text = f'∠={str(angle)}\u00B0'
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    font_scale = 1
+                    font_thickness = 2
+                    color = (0, 255, 0)
+                    text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+                    text_x = int(x_center - text_size[0] / 2)
+                    text_y = int(y_center + text_size[1] / 2)
+                    cv2.putText(self.im, text, (text_x, text_y), font, font_scale, color, font_thickness, cv2.LINE_AA)
+                
 
     def export_coordinates(self, im, boxes, red=(0, 255, 0), green=(255, 0, 0),arrow_length = 20,thicknes = 2,tipLength=0.5):
         prev_point = None

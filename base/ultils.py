@@ -216,8 +216,8 @@ class Base:
         self.datasets_format_model = None
         self.process_image_func = None
         self.processing_functions = {
-            'AABB': self.handle_image_customize,
-            'OBB': self.handle_image_customize_obb
+            'AABB': self.run_func,
+            'OBB': self.run_func_obb
         }
 
     def connect_database(self):
@@ -329,7 +329,7 @@ class Base:
     def process_func_local(self,selected_format):
         self.process_image_func = self.processing_functions.get(selected_format, None)
         
-    def handle_image_customize(self, input_image, width, height):
+    def run_func(self, input_image, width, height):
         size_model_all = int(self.size_model.get())
         conf_all = int(self.scale_conf_all.get()) / 100
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
@@ -385,7 +385,7 @@ class Base:
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
         return output_image, results_detect, list_label_ng
     
-    def handle_image_customize_obb(self, input_image, width, height):
+    def run_func_obb(self, input_image, width, height):
         size_model_all = int(self.size_model.get())
         conf_all = int(self.scale_conf_all.get()) / 100
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
@@ -440,126 +440,12 @@ class Base:
         if not ok_variable:
             results_detect = 'OK'
         if self.make_cls_var.get():       
-            self.format_params_xyxyxyxy2xywhr_indirect(input_image,results[0],xywhr_list,cls_list,model_settings)
+            self.xyxyxyxy2xywhr_indirect(input_image,results[0],xywhr_list,cls_list,conf_list,model_settings)
         show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
         show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
         output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
         return output_image, results_detect, list_label_ng
     
-    def handle_image_local(self,input_image_original,width,height):
-        size_model_all = int(self.size_model.get())
-        conf_all = int(self.scale_conf_all.get()) / 100
-        results = self.model(input_image_original,imgsz=size_model_all,conf=conf_all)
-        model_settings = [
-            {
-                'label_name':  self.model_name_labels[i1].cget("text"),
-                'join_detect': self.join[i1].get(),
-                'OK_jont': self.ok_vars[i1].get(),
-                'NG_jont': self.ng_vars[i1].get(),
-                'num_labels': int(self.num_inputs[i1].get()),
-                'width_min': int(self.wn_inputs[i1].get()),
-                'width_max': int(self.wx_inputs[i1].get()),
-                'height_min': int(self.hn_inputs[i1].get()),
-                'height_max': int(self.hx_inputs[i1].get()),
-                'PLC_value': int(self.plc_inputs[i1].get()),
-                'cmpnt_conf': int(self.conf_scales[i1].get()),
-            }
-            for i1 in range(len(self.model_name_labels))
-        ]
-        settings_dict = {setting['label_name']: setting for setting in model_settings}
-        boxes_dict = results[0].boxes.cpu().numpy()
-        xywh_list = boxes_dict.xywh.tolist()
-        cls_list = boxes_dict.cls.tolist()
-        conf_list = boxes_dict.conf.tolist()
-        allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
-        for index, (xywh, cls, conf) in enumerate(reversed(list(zip(xywh_list, cls_list, conf_list)))):
-            setting = settings_dict[results[0].names[int(cls)]]
-            if setting:                                       
-                if setting['join_detect']:
-                    if xywh[2] < setting['width_min'] or xywh[2] > setting['width_max'] \
-                            or xywh[3] < setting['height_min'] or xywh[3] > setting['height_max'] \
-                            or int(conf*100) < setting['cmpnt_conf']:
-                        list_remove.append(int(index))
-                        continue
-                    allowed_classes.append(results[0].names[int(cls)])
-                else:
-                    list_remove.append(int(index))           
-        for model_name,setting in settings_dict.items():
-            if setting['join_detect'] and setting['OK_jont']:
-                if allowed_classes.count(setting['label_name']) != setting['num_labels']:
-                    results_detect,ok_variable = 'NG',True
-                    list_label_ng.append(model_name)
-            if setting['join_detect'] and setting['NG_jont']:
-                if model_name in allowed_classes:
-                    results_detect,ok_variable = 'NG',True
-                    list_label_ng.append(setting['label_name'])
-        if not ok_variable:
-            results_detect = 'OK'
-        if clss:
-            self._make_cls(input_image_original,results,model_settings)
-        show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
-        show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
-        output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
-        return output_image, results_detect, list_label_ng
-    
-    def handle_image_local_obb(self, input_image, width, height):
-        size_model_all = int(self.size_model.get())
-        conf_all = int(self.scale_conf_all.get()) / 100
-        results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
-        model_settings = [
-            {
-                'label_name':  self.model_name_labels[i1].cget("text"),
-                'join_detect': self.join[i1].get(),
-                'OK_jont': self.ok_vars[i1].get(),
-                'NG_jont': self.ng_vars[i1].get(),
-                'num_labels': int(self.num_inputs[i1].get()),
-                'width_min': int(self.wn_inputs[i1].get()),
-                'width_max': int(self.wx_inputs[i1].get()),
-                'height_min': int(self.hn_inputs[i1].get()),
-                'height_max': int(self.hx_inputs[i1].get()),
-                'PLC_value': int(self.plc_inputs[i1].get()),
-                'cmpnt_conf': int(self.conf_scales[i1].get()),
-                'rotage_min': float(self.rn_inputs[i1].get()),
-                'rotage_max': float(self.rx_inputs[i1].get()),
-            }
-            for i1 in range(len(self.model_name_labels))
-        ]
-        settings_dict = {setting['label_name']: setting for setting in model_settings}
-        obb_dict = results[0].obb.cpu().numpy()
-        xywhr_list = obb_dict.xywhr.tolist()
-        cls_list = obb_dict.cls.tolist()
-        conf_list = obb_dict.conf.tolist()
-        allowed_classes,list_remove,list_label_ng,ok_variable,results_detect= [],[],[],False,'ERROR'
-        for index, (xywhr, cls, conf) in enumerate(reversed(list(zip(xywhr_list, cls_list, conf_list)))):
-            setting = settings_dict[results[0].names[int(cls)]]
-            if setting:
-                if setting['join_detect']:
-                    if xywhr[2] < setting['width_min'] or xywhr[2] > setting['width_max'] \
-                            or xywhr[3] < setting['height_min'] or xywhr[3] > setting['height_max'] \
-                            or int(conf*100) < setting['cmpnt_conf']:
-                        list_remove.append(int(index))
-                    if float(round(math.degrees(xywhr[4]),1)) < setting['rotage_min'] or float(round(math.degrees(xywhr[4]),1)) > setting['rotage_max']:
-                        results_detect,ok_variable = 'NG',True
-                        list_label_ng.append(setting['label_name'])   
-                    allowed_classes.append(results[0].names[int(cls)])
-                else:
-                    list_remove.append(int(index))   
-        for model_name,setting in settings_dict.items():
-            if setting['join_detect'] and setting['OK_jont']: 
-                if allowed_classes.count(setting['label_name']) != setting['num_labels']:
-                    results_detect,ok_variable = 'NG',True
-                    list_label_ng.append(model_name)
-            if setting['join_detect'] and setting['NG_jont']:
-                if model_name in allowed_classes:
-                    results_detect,ok_variable = 'NG',True
-                    list_label_ng.append(setting['label_name'])
-        if not ok_variable:
-            results_detect = 'OK'
-        show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
-        show_img = cv2.resize(show_img, (width, height), interpolation=cv2.INTER_AREA)
-        output_image = cv2.cvtColor(show_img, cv2.COLOR_BGR2RGB)
-        return output_image, results_detect, list_label_ng
-
     def _make_cls(self,image_path_mks_cls,results,model_settings):  
         with open(image_path_mks_cls[:-3] + 'txt', "a") as file:
             for params in results.xywhn:
@@ -671,7 +557,7 @@ class Base:
         angle_deg = (np.degrees(np.arctan2(points[1][1] - points[0][1], points[1][0] - points[0][0])) % 180)
         return class_id, center[0],center[1], width, height, angle_deg
         
-    def format_params_xyxyxyxy2xywhr_direct(self,des_path,progress_label):
+    def xyxyxyxy2xywhr_direct(self,des_path,progress_label):
         input_folder = des_path
         os.makedirs(os.path.join(input_folder,'instance'),exist_ok=True)
         output_folder = (os.path.join(input_folder,'instance'))
@@ -702,13 +588,27 @@ class Base:
                 os.replace(output_path, input_path)
         shutil.rmtree(output_folder)
 
-    def format_params_xyxyxyxy2xywhr_indirect(self,input_image,results,xywhr_list,cls_list,model_settings):
-            for index, (xywhr, cls) in enumerate(reversed(list(zip(xywhr_list, cls_list)))):   
-                xywhr_list[index][-1] = math.degrees(xywhr_list[index][-1])
-                line = [int(cls_list[index])] + xywhr_list[index]  
-                formatted_line = " ".join(["{:.6f}".format(x) if isinstance(x, float) else str(x) for x in line])
-                with open(input_image[:-3] + 'txt', 'a') as out_file:
-                    out_file.write(formatted_line+'\n')
+    def xyxyxyxy2xywhr_indirect(self,input_image,results,xywhr_list,cls_list,conf_list,model_settings):
+            settings_dict = {setting['label_name']: setting for setting in model_settings}
+            with open(input_image[:-3] + 'txt', 'a') as out_file:
+                out_file.write('YOLO_OBB\n')
+                for index, (xywhr, cls, conf) in enumerate(reversed(list(zip(xywhr_list, cls_list, conf_list)))):
+                    setting = settings_dict[results.names[int(cls)]]
+                    xywhr_list[index][-1] = math.degrees(xywhr_list[index][-1])
+                    line = [int(cls_list[index])] + xywhr_list[index]  
+                    formatted_line = " ".join(["{:.6f}".format(x) if isinstance(x, float) else str(x) for x in line])
+                    if setting:
+                        if setting['join_detect']:
+                            if xywhr[2] < setting['width_min'] or xywhr[2] > setting['width_max'] \
+                                    or xywhr[3] < setting['height_min'] or xywhr[3] > setting['height_max'] \
+                                    or int(conf*100) < setting['cmpnt_conf']:
+                                    continue                           
+                            out_file.write(f'{formatted_line}\n')
+            path = Path(input_image).parent
+            path = os.path.join(path,'classes.txt')
+            with open(path, "w") as file:
+                for i in range(len(results.names)):
+                    file.write(f'{str(results.names[i])}\n')
                
     def load_data_model(self):
         cursor, db_connection,_,_ = self.connect_database()
@@ -815,7 +715,10 @@ class Base:
         weight = self.weights.get()
         item_code_value = str(self.item_code.get())
         cursor, db_connection,_,_ = self.connect_database()
-        cursor.execute(f"SELECT * FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
+        try:
+            cursor.execute(f"SELECT * FROM {self.name_table} WHERE item_code = %s", (item_code_value,))
+        except Exception as e:
+            messagebox.showwarning('Warning',f'{e}: Item Code does not exist')
         records = cursor.fetchall()
         model = YOLO(weight)
         cursor.close()
@@ -1002,8 +905,7 @@ class Base:
             self.percent_entry.delete(0, tk.END)
             self.percent_entry.insert(0, "0%")
         threading.Thread(target=process_images).start()
-        
-             
+                
     def toggle_state_layout_model(self): 
         if self.state == 1:
             password = simpledialog.askstring("Administrator", "Enter password:", show="*")
@@ -1037,12 +939,7 @@ class Base:
         if file_path:
             folder_ng.delete(0,tk.END)
             folder_ng.insert(0,file_path)
-      
-    def classify_imgs(self):
-        pass    
 
-    
-    
     def load_first_img(self):
         filename = r"C:\Users\CCSX009\Documents\ultralytics-main\2024-03-05_00-01-31-398585-C1.jpg"
         self.model(filename, imgsz=608, conf=0.2)

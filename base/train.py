@@ -16,7 +16,7 @@ import threading
 from base.config import *
 import numpy as np
 import cv2
-from base.base_model import *
+from base.ultils import *
 
 class Training_Data(Base):
     def __init__(self, *args, **kwargs):
@@ -25,7 +25,7 @@ class Training_Data(Base):
         torch.cuda.set_device(0)
         self.device_recognize = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.current_dir = os.getcwd()
-        self.models_train = os.path.join(os.getcwd(),'combine','train_model.py')
+        self.models_train = os.path.join(os.getcwd(),'base','setup.py')
         self.models_path= os.path.join(os.getcwd(),'ultralytics','cfg','models','v8')
         self.source_FOLDER_entry=None
         self.source_FOLDER_entry_btn=None
@@ -385,7 +385,7 @@ class Training_Data(Base):
             self.source_FOLDER_entry.delete(0, tk.END)
             self.source_FOLDER_entry.insert(0, folder_selected)
 
-    def Execute_Command_Prompt_BASE(self,progress_label):
+    def run(self,progress_label):
         if self.source_FOLDER_entry.get() == None or self.source_FOLDER_entry.get() == '' or self.source_CLASS_entry.get() == None or self.source_CLASS_entry.get() == '':
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
@@ -461,7 +461,7 @@ class Training_Data(Base):
 
             self.execute_command(callback)
 
-    def Execute_Command_Prompt_OBB(self,progress_label):
+    def race(self,progress_label):
         if self.source_FOLDER_entry.get() == None or self.source_FOLDER_entry.get() == '' or self.source_CLASS_entry.get() == None or self.source_CLASS_entry.get() == '':
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
@@ -589,14 +589,14 @@ class Training_Data(Base):
                             messagebox.showwarning("Warning", 'Invalid Supported Dataset Formats')
                             return
                         else:
-                            self.Execute_Command_Prompt_BASE(progress_label)
+                            self.run(progress_label)
                             return                      
                     elif dataset_format == 'OBB Dataset Format':
                         if "YOLO_OBB" not in line:
                             messagebox.showwarning("Warning", 'Invalid Supported Dataset Formats')
                             return
                         else:
-                            self.Execute_Command_Prompt_OBB(progress_label)
+                            self.race(progress_label)
                             return
 
 

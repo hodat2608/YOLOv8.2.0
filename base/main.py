@@ -1,10 +1,9 @@
 import tkinter as tk
 from model_1 import *
-from model_2 import *
-from programTraining import *
-from videoDetection import *
+from base.train import *
+from base.extract_vid import *
 from tkinter import ttk
-from base_model import removefile
+from base.ultils import removefile
 from tkinter import *
 from tkinter import *
 import os,subprocess

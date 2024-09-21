@@ -1,4 +1,4 @@
-from base_model import Base,MySQL_Connection,PLC_Connection,removefile,base_handle_video
+from base.ultils import Base,MySQL_Connection,PLC_Connection,removefile,base_handle_video
 import sys
 import os
 current_dir = os.getcwd()
@@ -14,7 +14,7 @@ from tkinter import ttk
 import tkinter as tk
 import sys
 import os
-from base_model import Base
+from base.ultils import Base
 
 class Video_Dectection(Base,base_handle_video): 
 

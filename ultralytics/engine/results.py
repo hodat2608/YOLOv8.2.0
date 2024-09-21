@@ -122,6 +122,8 @@ class Results(SimpleClass):
         self.path = path
         self.save_dir = None
         self._keys = "boxes", "masks", "probs", "keypoints", "obb"
+        self.green = (0, 128, 0)
+        self.red = (0, 0, 255)
 
     def __getitem__(self, idx):
         """Return a Results object for the specified index."""
@@ -293,33 +295,51 @@ class Results(SimpleClass):
         #         box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
         #         annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
 
+        # # Plot Detect results
+        # if pred_boxes is not None and show_boxes:     
+        #     valid_pred_boxes = []
+        #     for index, d in enumerate(reversed(pred_boxes)):
+        #         c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+        #         if index in list_remove:
+        #             continue
+        #         valid_pred_boxes.append(d)
+        #     for d in valid_pred_boxes:
+        #         try:
+        #             radian = d.xywhr.tolist()
+        #         except:
+        #             radian = None
+        #         if radian: 
+        #             for r in radian: 
+        #                 rotage = math.degrees(r[4])
+        #                 c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+        #                 name = ("" if id is None else f"id:{id} ") + names[c]
+        #                 label = (f"{name} {conf:.2f}" if conf else name) if labels else None
+        #                 box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+        #                 annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle=round(rotage,1),is_angle=True)
+        #         else: 
+        #             c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+        #             name = ("" if id is None else f"id:{id} ") + names[c]
+        #             label = (f"{name} {conf:.2f}" if conf else name) if labels else None
+        #             box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+        #             annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle='',is_angle=False)
+
         # Plot Detect results
         if pred_boxes is not None and show_boxes:     
-            valid_pred_boxes = []
-            for index, d in enumerate(reversed(pred_boxes)):
-                c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-                if index in list_remove:
-                    continue
-                valid_pred_boxes.append(d)
-            for d in valid_pred_boxes:
+            for index, d in enumerate(reversed(pred_boxes)):     
                 try:
                     radian = d.xywhr.tolist()
                 except:
                     radian = None
+                c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
+                name = ("" if id is None else f"id:{id} ") + names[c]
+                label = (f"{name} {conf:.2f}" if conf else name) if labels else None
+                box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
+                color = self.red if index in list_remove else self.green
                 if radian: 
-                    for r in radian: 
-                        rotage = math.degrees(r[4])
-                        c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-                        name = ("" if id is None else f"id:{id} ") + names[c]
-                        label = (f"{name} {conf:.2f}" if conf else name) if labels else None
-                        box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                        annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle=round(rotage,1),is_angle=True)
+                    for r in radian:
+                        annotator.box_label(box, label, color=color, rotated=is_obb, angle=round(math.degrees(r[4]), 1), is_angle=True)
                 else: 
-                    c, conf, id = int(d.cls), float(d.conf) if conf else None, None if d.id is None else int(d.id.item())
-                    name = ("" if id is None else f"id:{id} ") + names[c]
-                    label = (f"{name} {conf:.2f}" if conf else name) if labels else None
-                    box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                    annotator.box_label(box, label, color=colors(c, True), rotated=is_obb,angle='',is_angle=False)
+                    annotator.box_label(box, label, color=color, rotated=is_obb, angle='', is_angle=False)
 
         # Plot Classify results
         if pred_probs is not None and show_probs:

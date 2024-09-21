@@ -1,10 +1,10 @@
-from base_model import Base,MySQL_Connection,PLC_Connection,removefile
 import sys
 from pathlib import Path
 current_dir = Path(__file__).resolve().parent.parent
 ultralytics_main_dir = current_dir
 sys.path.append(str(ultralytics_main_dir))
 from ultralytics import YOLO
+from base.ultils import Base,MySQL_Connection,PLC_Connection,removefile
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
@@ -24,7 +24,6 @@ import tkinter as tk
 import shutil
 import sys
 import os
-from tkinter import messagebox,simpledialog
 from functools import partial 
 
 class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
@@ -72,8 +71,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.process_image_func = None
         self.processing_functions = {
-            'AABB': self.handle_image_customize,
-            'OBB': self.handle_image_customize_obb
+            'AABB': self.run_func,
+            'OBB': self.run_func_obb
         }
 
     def on_option_change(self, event,Frame_2):
@@ -175,11 +174,11 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def save_params_model(self):
         return super().save_params_model()
     
-    def handle_image_customize(self, input_image, width, height):
-        return super().handle_image_customize(input_image, width, height)
+    def run_func(self, input_image, width, height):
+        return super().run_func(input_image, width, height)
     
-    def handle_image_customize_obb(self, input_image, width, height):
-        return super().handle_image_customize_obb(input_image, width, height)
+    def run_func_obb(self, input_image, width, height):
+        return super().run_func_obb(input_image, width, height)
     
     def load_data_model(self):
         return super().load_data_model()
@@ -274,8 +273,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         frame_width = 1500
         frame_height = 2000
 
-        Frame_1 = ttk.LabelFrame(scrollable_frame, text="Frame 1", width=frame_width, height=frame_height)
-        Frame_2 = ttk.LabelFrame(scrollable_frame, text="Frame 2", width=frame_width, height=frame_height)
+        Frame_1 = ttk.LabelFrame(scrollable_frame, text="Option", width=frame_width, height=frame_height)
+        Frame_2 = ttk.LabelFrame(scrollable_frame, text="Pamameters", width=frame_width, height=frame_height)
 
         Frame_1.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         Frame_2.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
