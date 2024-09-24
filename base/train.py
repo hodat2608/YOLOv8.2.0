@@ -42,6 +42,9 @@ class Training_Data(Base):
     def format_params_xywhr2xyxyxyxy(self, des_path, progress_label):
         return super().format_params_xywhr2xyxyxyxy(des_path, progress_label)
 
+    def get_params_xywhr2xyxyxyxy_original_ops(self, des_path, progress_label):
+        return super().get_params_xywhr2xyxyxyxy_original_ops(des_path, progress_label)
+
     def layout(self,settings_notebook,window):
        
         canvas1 = tk.Canvas(settings_notebook)

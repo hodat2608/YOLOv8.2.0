@@ -11,12 +11,10 @@ from PIL import Image, ImageTk
 import glob
 import torch
 # import stapipy as st
-import numpy as np
 import cv2
 import os
 import time
 from PIL import Image,ImageTk
-import socket
 import time
 from tkinter import ttk
 import threading
@@ -98,12 +96,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 img1_orgin = cv2.imread(filename)
                 for widget in camera_frame.winfo_children():
                     widget.destroy()
-                image_result, results_detect, list_label_ng = self.process_image_func(img1_orgin, width, height)
-                
-                if results_detect == 'OK':
-                    self.result_detection.config(text=results_detect,fg='green')
-                else:
-                    self.result_detection.config(text=results_detect,fg='red')
+                image_result, results_detect, list_label_ng = self.process_image_func(img1_orgin, width, height) 
+                self.result_detection.config(text=results_detect, fg='green' if results_detect == 'OK' else 'red')
                 list_label_ng = ','.join(list_label_ng)
                 img_pil = Image.fromarray(image_result)
                 photo = ImageTk.PhotoImage(img_pil)

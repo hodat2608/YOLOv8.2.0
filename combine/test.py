@@ -1,172 +1,70 @@
-import sys,os,glob,shutil
-from pathlib import Path
-current_dir = Path(__file__).resolve().parent.parent
-ultralytics_main_dir = current_dir
-sys.path.append(str(ultralytics_main_dir))
-from ultralytics import YOLO
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-import torch.multiprocessing as mp
-mp.set_start_method('spawn', force=True)
-import torch
-import argparse
-torch.cuda.empty_cache()
 
-# # # Create a new YOLOv8n-OBB model from scratch
-# # model = YOLO(r"C:\Users\CCSX009\Documents\label\yolov8n_obb.yaml")
-
-# # # Train the model on the DOTAv2 dataset
-# # if __name__ == '__main__':
-# #     results = model.train(data=r"C:\Users\CCSX009\Documents\label\data_cfg.yaml", epochs=100, imgsz=640,device='cpu')
-# #     metrics = model.val()
-
-# import os
-# import glob
-# import shutil
-
-# txt_path = r"C:\Users\CCSX009\Pictures\Saved Pictures\nghieng\TEMP\New folder\Image_bonu20240914085953885.txt"
-# folder_img_path = r'C:\Users\CCSX009\Pictures\Saved Pictures\nghieng\TEMP'
-
-# # Duyệt qua tất cả các file ảnh .jpg trong thư mục
-# for img_path in glob.glob(os.path.join(folder_img_path, '*.jpg')):
-#     tenf = os.path.basename(img_path)  # Lấy tên file ảnh
-    
-#     # Đường dẫn mới cho file txt sẽ được sao chép
-#     new_txt_path = os.path.join(folder_img_path, tenf[:-3] + 'txt')
-    
-#     # Sao chép file txt với tên mới
-#     shutil.copy(txt_path, new_txt_path)
-
-# print("Hoàn thành sao chép file txt với tên tương ứng cho từng ảnh.")
-
-# from ultralytics.data.converter import convert_dota_to_yolo_obb
-
-
-# convert_dota_to_yolo_obb(r"C:\Users\CCSX009\Downloads\dota8\dota8")
-# import numpy as np
-
-# def obb_to_4_points_normalized(class_id, x_center, y_center, width, height, angle, img_width, img_height):
-#     # Tính nửa chiều rộng và nửa chiều cao
-#     half_width = width / 2
-#     half_height = height / 2
-    
-#     # Chuyển góc từ độ sang radian
-#     angle_rad = np.deg2rad(angle)
-    
-#     # Tạo ma trận quay dựa trên góc nghiêng
-#     rotation_matrix = np.array([
-#         [np.cos(angle_rad), -np.sin(angle_rad)],
-#         [np.sin(angle_rad), np.cos(angle_rad)]
-#     ])
-    
-#     # Tọa độ tương đối của 4 đỉnh (theo chiều kim đồng hồ) trước khi xoay
-#     corners = np.array([
-#         [-half_width, -half_height],  # Bottom-left
-#         [half_width, -half_height],   # Bottom-right
-#         [half_width, half_height],    # Top-right
-#         [-half_width, half_height]    # Top-left
-#     ])
-    
-#     # Xoay các góc dựa trên ma trận quay
-#     rotated_corners = np.dot(corners, rotation_matrix)
-    
-#     # Dịch các góc về vị trí x_center, y_center
-#     final_corners = rotated_corners + np.array([x_center, y_center])
-    
-#     # Chia x cho img_width và y cho img_height để chuẩn hóa các tọa độ
-#     normalized_corners = final_corners / np.array([img_width, img_height])
-    
-#     # Trả về kết quả với class_id và 4 tọa độ đỉnh (x1, y1, x2, y2, x3, y3, x4, y4)
-#     return [class_id] + normalized_corners.flatten().tolist()
-
-# # Ví dụ sử dụng với kích thước ảnh w = 1200, h = 1200
-# obb_label = [0, 758.007233, 282.513061, 534.987392, 174.524347, -15.110780]
-# img_width = 1200
-# img_height = 1200
-# four_points_label_normalized = obb_to_4_points_normalized(*obb_label, img_width, img_height)
-
-# print(four_points_label_normalized)
-
-
-import os
+import torch,os,cv2,shutil
 import numpy as np
+def xywhr2xyxyxyxy_original(class_id,x,img_width,img_height):
+    """
+    Convert batched Oriented Bounding Boxes (OBB) from [xywh, rotation] to [xy1, xy2, xy3, xy4]. Rotation values should
+    be in degrees from 0 to 90.
 
-def obb_to_4_points_normalized(class_id, x_center, y_center, width, height, angle, img_width, img_height):
-    # Tính nửa chiều rộng và nửa chiều cao
-    half_width = width / 2
-    half_height = height / 2
-    
-    # Chuyển góc từ độ sang radian
-    angle_rad = np.deg2rad(angle)
-    
-    # Tạo ma trận quay dựa trên góc nghiêng
-    rotation_matrix = np.array([
-        [np.cos(angle_rad), -np.sin(angle_rad)],
-        [np.sin(angle_rad), np.cos(angle_rad)]
-    ])
-    
-    # Tọa độ tương đối của 4 đỉnh (theo chiều kim đồng hồ) trước khi xoay
-    corners = np.array([
-        [-half_width, -half_height],  # Bottom-left
-        [half_width, -half_height],   # Bottom-right
-        [half_width, half_height],    # Top-right
-        [-half_width, half_height]    # Top-left
-    ])
-    
-    # Xoay các góc dựa trên ma trận quay
-    rotated_corners = np.dot(corners, rotation_matrix)
-    
-    # Dịch các góc về vị trí x_center, y_center
-    final_corners = rotated_corners + np.array([x_center, y_center])
-    
-    # Chia x cho img_width và y cho img_height để chuẩn hóa các tọa độ
-    normalized_corners = final_corners / np.array([img_width, img_height])
-    
-    # Trả về kết quả với class_id và 4 tọa độ đỉnh (x1, y1, x2, y2, x3, y3, x4, y4)
-    return [class_id] + normalized_corners.flatten().tolist()
+    Args:
+        x (numpy.ndarray | torch.Tensor): Boxes in [cx, cy, w, h, rotation] format of shape (n, 5) or (b, n, 5).
 
-def process_txt_files(input_folder, output_folder, img_width, img_height):
-    # Đảm bảo thư mục output tồn tại
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+    Returns:
+        (numpy.ndarray | torch.Tensor): Converted corner points of shape (n, 4, 2) or (b, n, 4, 2).
+    """
+    cos, sin, cat, stack = (
+        (torch.cos, torch.sin, torch.cat, torch.stack)
+        if isinstance(x, torch.Tensor)
+        else (np.cos, np.sin, np.concatenate, np.stack)
+    )
 
-    # Duyệt qua tất cả các file .txt trong thư mục input
-    for txt_file in os.listdir(input_folder):
+    ctr = x[..., :2]
+    w, h, angle = (x[..., i : i + 1] for i in range(2, 5))
+    cos_value, sin_value = cos(angle), sin(angle)
+    vec1 = [w / 2 * cos_value, w / 2 * sin_value]
+    vec2 = [-h / 2 * sin_value, h / 2 * cos_value]
+    vec1 = cat(vec1, -1)
+    vec2 = cat(vec2, -1)
+    pt1 = ctr + vec1 + vec2
+    pt2 = ctr + vec1 - vec2
+    pt3 = ctr - vec1 - vec2
+    pt4 = ctr - vec1 + vec2
+
+    corners = torch.stack([pt1, pt2, pt3, pt4], dim=-2)
+    corners_normalized = corners.clone()
+    corners_normalized[..., 0] = corners[..., 0] / img_width
+    corners_normalized[..., 1] = corners[..., 1] / img_height 
+
+    return [int(class_id)] + corners_normalized.view(-1).tolist()
+
+def get_params_xywhr2xyxyxyxy(des_path):
+    input_folder = des_path
+    os.makedirs(os.path.join(input_folder,'instance'),exist_ok=True)
+    output_folder = (os.path.join(input_folder,'instance'))
+    total_fl = len(des_path) 
+    for index,txt_file in enumerate(os.listdir(input_folder)):
         if txt_file.endswith('.txt'):
+            if txt_file == 'classes.txt':
+                continue
             input_path = os.path.join(input_folder, txt_file)
+            im = cv2.imread(input_path[:-4]+'.jpg')
+            im_height, im_width, _ = im.shape
             output_path = os.path.join(output_folder, txt_file)
-
-            # Đọc nội dung file txt
             with open(input_path, 'r') as file:
                 lines = file.readlines()
-
-            # Mở file output để ghi dữ liệu đã được convert
             with open(output_path, 'w') as out_file:
                 for line in lines:
                     line = line.strip()
-                    # Bỏ qua các dòng chứa "YOLO_OBB"
                     if "YOLO_OBB" in line:
                         continue
-                    
-                    # Chuyển đổi từng dòng dữ liệu (class_id, x_center, y_center, width, height, angle)
                     params = list(map(float, line.split()))
-                    class_id, x_center, y_center, width, height, angle = params
-                    converted_label = obb_to_4_points_normalized(class_id, x_center, y_center, width, height, angle, img_width, img_height)
-                    
-                    # Ghi kết quả chuyển đổi vào file mới
+                    class_id = params[0]
+                    bbox_list = params[1:]
+                    bbox_tensor = torch.tensor(bbox_list, dtype=torch.float32)
+                    bbox_tensor_2d = bbox_tensor.unsqueeze(0)
+                    converted_label = xywhr2xyxyxyxy_original(class_id,bbox_tensor_2d,im_width,im_height)
                     out_file.write(" ".join(map(str, converted_label)) + '\n')
-
-    print(f"Đã chuyển đổi tất cả các file txt trong {input_folder} sang dạng [class_index, x1, y1, x2, y2, x3, y3, x4, y4] và lưu vào {output_folder}.")
-
-# Đường dẫn tới thư mục chứa các file txt
-input_folder = r'C:\Users\CCSX009\Desktop\thw'
-output_folder = r'C:\Users\CCSX009\Desktop\thw\New folder'
-
-# Kích thước ảnh (w, h)
-img_width = 1400
-img_height = 1050
-
-# Gọi hàm để xử lý các file txt
-process_txt_files(input_folder, output_folder, img_width, img_height)
-
+    #         os.replace(output_path, input_path)
+    # shutil.rmtree(output_folder)
+des_path = r'C:\Users\CCSX009\Desktop\TTT'
+get_params_xywhr2xyxyxyxy(des_path)

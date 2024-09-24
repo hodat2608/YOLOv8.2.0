@@ -18,12 +18,14 @@ from initialization import FinsPLCMemoryAreas
 import tkinter as tk
 import shutil
 import os
-soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 import cv2
 from ultralytics.utils.files import increment_path
 from ultralytics.utils.plotting import Annotator
 import torch
 import math
+from ultralytics.utils import ops
+soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 def removefile():
     directory1 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg'
     directory2 = 'C:/Users/CCSX009/Documents/yolov5/test_image/camera2/*.jpg'
@@ -35,7 +37,6 @@ def removefile():
     for f2 in chk2:
         os.remove(f2)
         print('already delete folder 2')
-
 
 class MySQL_Connection():
 
@@ -250,18 +251,18 @@ class Base:
                     except:
                         pass
 
-                    for i1 in range(len(self.model_name_labels)):
-                        label_name =  self.model_name_labels[i1].cget("text")
-                        join_detect = self.join[i1].get()
-                        OK_jont = self.ok_vars[i1].get()
-                        NG_jont = self.ng_vars[i1].get()
-                        num_labels = int(self.num_inputs[i1].get())
-                        width_min = int(self.wn_inputs[i1].get())
-                        width_max = int(self.wx_inputs[i1].get())
-                        height_min = int(self.hn_inputs[i1].get())
-                        height_max = int(self.hx_inputs[i1].get())
-                        PLC_value = int(self.plc_inputs[i1].get())
-                        cmpnt_conf = int(self.conf_scales[i1].get())
+                    for index in range(len(self.model_name_labels)):
+                        label_name =  self.model_name_labels[index].cget("text")
+                        join_detect = self.join[index].get()
+                        OK_jont = self.ok_vars[index].get()
+                        NG_jont = self.ng_vars[index].get()
+                        num_labels = int(self.num_inputs[index].get())
+                        width_min = int(self.wn_inputs[index].get())
+                        width_max = int(self.wx_inputs[index].get())
+                        height_min = int(self.hn_inputs[index].get())
+                        height_max = int(self.hx_inputs[index].get())
+                        PLC_value = int(self.plc_inputs[index].get())
+                        cmpnt_conf = int(self.conf_scales[index].get())
                         query_sql = f"""
                         INSERT INTO {self.name_table}
                         (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
@@ -292,20 +293,20 @@ class Base:
                     except:
                         pass
 
-                    for i1 in range(len(self.model_name_labels)):
-                        label_name =  self.model_name_labels[i1].cget("text")
-                        join_detect = self.join[i1].get()
-                        OK_jont = self.ok_vars[i1].get()
-                        NG_jont = self.ng_vars[i1].get()
-                        num_labels = int(self.num_inputs[i1].get())
-                        width_min = int(self.wn_inputs[i1].get())
-                        width_max = int(self.wx_inputs[i1].get())
-                        height_min = int(self.hn_inputs[i1].get())
-                        height_max = int(self.hx_inputs[i1].get())
-                        PLC_value = int(self.plc_inputs[i1].get())
-                        cmpnt_conf = int(self.conf_scales[i1].get())
-                        rotage_min = float(self.rn_inputs[i1].get())
-                        rotage_max = float(self.rx_inputs[i1].get())
+                    for index in range(len(self.model_name_labels)):
+                        label_name =  self.model_name_labels[index].cget("text")
+                        join_detect = self.join[index].get()
+                        OK_jont = self.ok_vars[index].get()
+                        NG_jont = self.ng_vars[index].get()
+                        num_labels = int(self.num_inputs[index].get())
+                        width_min = int(self.wn_inputs[index].get())
+                        width_max = int(self.wx_inputs[index].get())
+                        height_min = int(self.hn_inputs[index].get())
+                        height_max = int(self.hx_inputs[index].get())
+                        PLC_value = int(self.plc_inputs[index].get())
+                        cmpnt_conf = int(self.conf_scales[index].get())
+                        rotage_min = float(self.rn_inputs[index].get())
+                        rotage_max = float(self.rx_inputs[index].get())
                         query_sql = f"""
                         INSERT INTO {self.name_table}
                         (item_code, weight, confidence_all, label_name,join_detect, OK, NG, num_labels, width_min, width_max, 
@@ -335,19 +336,19 @@ class Base:
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
         model_settings = [
             {
-                'label_name':  self.model_name_labels[i1].cget("text"),
-                'join_detect': self.join[i1].get(),
-                'OK_jont': self.ok_vars[i1].get(),
-                'NG_jont': self.ng_vars[i1].get(),
-                'num_labels': int(self.num_inputs[i1].get()),
-                'width_min': int(self.wn_inputs[i1].get()),
-                'width_max': int(self.wx_inputs[i1].get()),
-                'height_min': int(self.hn_inputs[i1].get()),
-                'height_max': int(self.hx_inputs[i1].get()),
-                'PLC_value': int(self.plc_inputs[i1].get()),
-                'cmpnt_conf': int(self.conf_scales[i1].get()),
+                'label_name':  self.model_name_labels[index].cget("text"),
+                'join_detect': self.join[index].get(),
+                'OK_jont': self.ok_vars[index].get(),
+                'NG_jont': self.ng_vars[index].get(),
+                'num_labels': int(self.num_inputs[index].get()),
+                'width_min': int(self.wn_inputs[index].get()),
+                'width_max': int(self.wx_inputs[index].get()),
+                'height_min': int(self.hn_inputs[index].get()),
+                'height_max': int(self.hx_inputs[index].get()),
+                'PLC_value': int(self.plc_inputs[index].get()),
+                'cmpnt_conf': int(self.conf_scales[index].get()),
             }
-            for i1 in range(len(self.model_name_labels))
+            for index in range(len(self.model_name_labels))
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         boxes_dict = results[0].boxes.cpu().numpy()
@@ -391,21 +392,21 @@ class Base:
         results = self.model(input_image,imgsz=size_model_all,conf=conf_all)
         model_settings = [
             {
-                'label_name':  self.model_name_labels[i1].cget("text"),
-                'join_detect': self.join[i1].get(),
-                'OK_jont': self.ok_vars[i1].get(),
-                'NG_jont': self.ng_vars[i1].get(),
-                'num_labels': int(self.num_inputs[i1].get()),
-                'width_min': int(self.wn_inputs[i1].get()),
-                'width_max': int(self.wx_inputs[i1].get()),
-                'height_min': int(self.hn_inputs[i1].get()),
-                'height_max': int(self.hx_inputs[i1].get()),
-                'PLC_value': int(self.plc_inputs[i1].get()),
-                'cmpnt_conf': int(self.conf_scales[i1].get()),
-                'rotage_min': float(self.rn_inputs[i1].get()),
-                'rotage_max': float(self.rx_inputs[i1].get()),
+                'label_name':  label.cget("text"),
+                'join_detect': self.join[index].get(),
+                'OK_jont': self.ok_vars[index].get(),
+                'NG_jont': self.ng_vars[index].get(),
+                'num_labels': int(self.num_inputs[index].get()),
+                'width_min': int(self.wn_inputs[index].get()),
+                'width_max': int(self.wx_inputs[index].get()),
+                'height_min': int(self.hn_inputs[index].get()),
+                'height_max': int(self.hx_inputs[index].get()),
+                'PLC_value': int(self.plc_inputs[index].get()),
+                'cmpnt_conf': int(self.conf_scales[index].get()),
+                'rotage_min': float(self.rn_inputs[index].get()),
+                'rotage_max': float(self.rx_inputs[index].get()),
             }
-            for i1 in range(len(self.model_name_labels))
+            for index, label in enumerate(self.model_name_labels)
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         obb_dict = results[0].obb.cpu().numpy()
@@ -436,9 +437,7 @@ class Base:
                 if model_name in allowed_classes:
                     results_detect,ok_variable = 'NG',True
                     list_label_ng.append(setting['label_name'])
-    
-        if not ok_variable:
-            results_detect = 'OK'
+        results_detect = 'OK' if not ok_variable else 'NG'
         if self.make_cls_var.get():       
             self.xyxyxyxy2xywhr_indirect(input_image,results[0],xywhr_list,cls_list,conf_list,model_settings)
         show_img = np.squeeze(results[0].extract_npy(list_remove=list_remove))
@@ -469,8 +468,8 @@ class Base:
         path = Path(image_path_mks_cls).parent
         path = os.path.join(path,'classes.txt')
         with open(path, "w") as file:
-            for i1 in range(len(results.names)):
-                file.write(str(results.names[i1])+'\n')
+            for index in range(len(results.names)):
+                file.write(str(results.names[index])+'\n')
 
     def xywhr2xyxyxyxy(self,class_id,x_center,y_center,width,height,angle,im_height,im_width):
         half_width = width / 2
@@ -514,6 +513,75 @@ class Base:
                         params = list(map(float, line.split()))
                         class_id,x_center,y_center,width,height,angle = params
                         converted_label = self.xywhr2xyxyxyxy(class_id,x_center,y_center,width,height,angle,im_height,im_width)
+                        out_file.write(" ".join(map(str, converted_label)) + '\n')
+                progress_retail = (index + 1) / total_fl * 100
+                progress_label.config(text=f"Converting YOLO OBB Dataset Format to DOTA Format: {progress_retail:.2f}%")
+                progress_label.update_idletasks()
+                os.replace(output_path, input_path)
+        shutil.rmtree(output_folder)
+
+    def xywhr2xyxyxyxy_original_ops(self,class_id,x,img_width,img_height):
+        """
+        Convert batched Oriented Bounding Boxes (OBB) from [xywh, rotation] to [xy1, xy2, xy3, xy4]. Rotation values should
+        be in degrees from 0 to 90.
+
+        Args:
+            x (numpy.ndarray | torch.Tensor): Boxes in [cx, cy, w, h, rotation] format of shape (n, 5) or (b, n, 5).
+
+        Returns:
+            (numpy.ndarray | torch.Tensor): Converted corner points of shape (n, 4, 2) or (b, n, 4, 2).
+        """
+        cos, sin, cat, stack = (
+            (torch.cos, torch.sin, torch.cat, torch.stack)
+            if isinstance(x, torch.Tensor)
+            else (np.cos, np.sin, np.concatenate, np.stack)
+        )
+
+        ctr = x[..., :2]
+        w, h, angle = (x[..., i : i + 1] for i in range(2, 5))
+        cos_value, sin_value = cos(angle), sin(angle)
+        vec1 = [w / 2 * cos_value, w / 2 * sin_value]
+        vec2 = [-h / 2 * sin_value, h / 2 * cos_value]
+        vec1 = cat(vec1, -1)
+        vec2 = cat(vec2, -1)
+        pt1 = ctr + vec1 + vec2
+        pt2 = ctr + vec1 - vec2
+        pt3 = ctr - vec1 - vec2
+        pt4 = ctr - vec1 + vec2
+
+        corners = torch.stack([pt1, pt2, pt3, pt4], dim=-2)
+        corners_normalized = corners.clone()
+        corners_normalized[..., 0] = corners[..., 0] / img_width
+        corners_normalized[..., 1] = corners[..., 1] / img_height 
+
+        return [int(class_id)] + corners_normalized.view(-1).tolist()
+
+    def get_params_xywhr2xyxyxyxy_original_ops(self,des_path,progress_label):
+        input_folder = des_path
+        os.makedirs(os.path.join(input_folder,'instance'),exist_ok=True)
+        output_folder = (os.path.join(input_folder,'instance'))
+        total_fl = len(des_path) 
+        for index,txt_file in enumerate(os.listdir(input_folder)):
+            if txt_file.endswith('.txt'):
+                if txt_file == 'classes.txt':
+                    continue
+                input_path = os.path.join(input_folder, txt_file)
+                im = cv2.imread(input_path[:-4]+'.jpg')
+                im_height, im_width, _ = im.shape
+                output_path = os.path.join(output_folder, txt_file)
+                with open(input_path, 'r') as file:
+                    lines = file.readlines()
+                with open(output_path, 'w') as out_file:
+                    for line in lines:
+                        line = line.strip()
+                        if "YOLO_OBB" in line:
+                            continue
+                        params = list(map(float, line.split()))
+                        class_id = params[0]
+                        bbox_list = params[1:]
+                        bbox_tensor = torch.tensor(bbox_list, dtype=torch.float32)
+                        bbox_tensor_2d = bbox_tensor.unsqueeze(0)
+                        converted_label = self.xywhr2xyxyxyxy_original_ops(class_id,bbox_tensor_2d,im_width,im_height)
                         out_file.write(" ".join(map(str, converted_label)) + '\n')
                 progress_retail = (index + 1) / total_fl * 100
                 progress_label.config(text=f"Converting YOLO OBB Dataset Format to DOTA Format: {progress_retail:.2f}%")
@@ -638,53 +706,53 @@ class Base:
                 for widget in Frame_2.grid_slaves():
                     widget.grid_forget()
                 self.option_layout_parameters(Frame_2,self.model)
-                for i1 in range(len(model1.names)):          
+                for index in range(len(model1.names)):          
                     for record in records:                
-                        if record['label_name'] == model1.names[i1]:
-                            self.join[i1].set(bool(record['join_detect']))
-                            self.ok_vars[i1].set(bool(record['OK']))
-                            self.ng_vars[i1].set(bool(record['NG']))
-                            self.num_inputs[i1].delete(0, tk.END)
-                            self.num_inputs[i1].insert(0, record['num_labels'])
-                            self.wn_inputs[i1].delete(0, tk.END)
-                            self.wn_inputs[i1].insert(0, record['width_min'])
-                            self.wx_inputs[i1].delete(0, tk.END)
-                            self.wx_inputs[i1].insert(0, record['width_max'])
-                            self.hn_inputs[i1].delete(0, tk.END)
-                            self.hn_inputs[i1].insert(0, record['height_min'])                
-                            self.hx_inputs[i1].delete(0, tk.END)
-                            self.hx_inputs[i1].insert(0, record['height_max'])
-                            self.plc_inputs[i1].delete(0, tk.END)
-                            self.plc_inputs[i1].insert(0, record['PLC_value'])
-                            self.conf_scales[i1].set(record['cmpnt_conf'])
+                        if record['label_name'] == model1.names[index]:
+                            self.join[index].set(bool(record['join_detect']))
+                            self.ok_vars[index].set(bool(record['OK']))
+                            self.ng_vars[index].set(bool(record['NG']))
+                            self.num_inputs[index].delete(0, tk.END)
+                            self.num_inputs[index].insert(0, record['num_labels'])
+                            self.wn_inputs[index].delete(0, tk.END)
+                            self.wn_inputs[index].insert(0, record['width_min'])
+                            self.wx_inputs[index].delete(0, tk.END)
+                            self.wx_inputs[index].insert(0, record['width_max'])
+                            self.hn_inputs[index].delete(0, tk.END)
+                            self.hn_inputs[index].insert(0, record['height_min'])                
+                            self.hx_inputs[index].delete(0, tk.END)
+                            self.hx_inputs[index].insert(0, record['height_max'])
+                            self.plc_inputs[index].delete(0, tk.END)
+                            self.plc_inputs[index].insert(0, record['PLC_value'])
+                            self.conf_scales[index].set(record['cmpnt_conf'])
             elif load_dataset_format == 'OBB':
                 self.process_func_local(load_dataset_format)
                 for widget in Frame_2.grid_slaves():
                     widget.grid_forget()
                 self.option_layout_parameters_orient_bounding_box(Frame_2,self.model)
-                for i1 in range(len(model1.names)):          
+                for index in range(len(model1.names)):          
                     for record in records:                
-                        if record['label_name'] == model1.names[i1]:
-                            self.join[i1].set(bool(record['join_detect']))
-                            self.ok_vars[i1].set(bool(record['OK']))
-                            self.ng_vars[i1].set(bool(record['NG']))
-                            self.num_inputs[i1].delete(0, tk.END)
-                            self.num_inputs[i1].insert(0, record['num_labels'])
-                            self.wn_inputs[i1].delete(0, tk.END)
-                            self.wn_inputs[i1].insert(0, record['width_min'])
-                            self.wx_inputs[i1].delete(0, tk.END)
-                            self.wx_inputs[i1].insert(0, record['width_max'])
-                            self.hn_inputs[i1].delete(0, tk.END)
-                            self.hn_inputs[i1].insert(0, record['height_min'])                
-                            self.hx_inputs[i1].delete(0, tk.END)
-                            self.hx_inputs[i1].insert(0, record['height_max'])
-                            self.plc_inputs[i1].delete(0, tk.END)
-                            self.plc_inputs[i1].insert(0, record['PLC_value'])
-                            self.conf_scales[i1].set(record['cmpnt_conf'])
-                            self.rn_inputs[i1].delete(0, tk.END)
-                            self.rn_inputs[i1].insert(0, record['rotage_min'])                
-                            self.rx_inputs[i1].delete(0, tk.END)
-                            self.rx_inputs[i1].insert(0, record['rotage_max'])
+                        if record['label_name'] == model1.names[index]:
+                            self.join[index].set(bool(record['join_detect']))
+                            self.ok_vars[index].set(bool(record['OK']))
+                            self.ng_vars[index].set(bool(record['NG']))
+                            self.num_inputs[index].delete(0, tk.END)
+                            self.num_inputs[index].insert(0, record['num_labels'])
+                            self.wn_inputs[index].delete(0, tk.END)
+                            self.wn_inputs[index].insert(0, record['width_min'])
+                            self.wx_inputs[index].delete(0, tk.END)
+                            self.wx_inputs[index].insert(0, record['width_max'])
+                            self.hn_inputs[index].delete(0, tk.END)
+                            self.hn_inputs[index].insert(0, record['height_min'])                
+                            self.hx_inputs[index].delete(0, tk.END)
+                            self.hx_inputs[index].insert(0, record['height_max'])
+                            self.plc_inputs[index].delete(0, tk.END)
+                            self.plc_inputs[index].insert(0, record['PLC_value'])
+                            self.conf_scales[index].set(record['cmpnt_conf'])
+                            self.rn_inputs[index].delete(0, tk.END)
+                            self.rn_inputs[index].insert(0, record['rotage_min'])                
+                            self.rx_inputs[index].delete(0, tk.END)
+                            self.rx_inputs[index].insert(0, record['rotage_max'])
         except IndexError as e:
             messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
@@ -731,49 +799,49 @@ class Base:
             records, model = self.load_params_child()
             try:
                 if self.datasets_format_model.get() == 'AABB':
-                    for i1 in range(len(model.names)):          
+                    for index in range(len(model.names)):          
                         for record in records:                
-                            if record['label_name'] == model.names[i1]:
-                                self.join[i1].set(bool(record['join_detect']))
-                                self.ok_vars[i1].set(bool(record['OK']))
-                                self.ng_vars[i1].set(bool(record['NG']))
-                                self.num_inputs[i1].delete(0, tk.END)
-                                self.num_inputs[i1].insert(0, record['num_labels'])
-                                self.wn_inputs[i1].delete(0, tk.END)
-                                self.wn_inputs[i1].insert(0, record['width_min'])
-                                self.wx_inputs[i1].delete(0, tk.END)
-                                self.wx_inputs[i1].insert(0, record['width_max'])
-                                self.hn_inputs[i1].delete(0, tk.END)
-                                self.hn_inputs[i1].insert(0, record['height_min'])                
-                                self.hx_inputs[i1].delete(0, tk.END)
-                                self.hx_inputs[i1].insert(0, record['height_max'])
-                                self.plc_inputs[i1].delete(0, tk.END)
-                                self.plc_inputs[i1].insert(0, record['PLC_value'])
-                                self.conf_scales[i1].set(record['cmpnt_conf'])
+                            if record['label_name'] == model.names[index]:
+                                self.join[index].set(bool(record['join_detect']))
+                                self.ok_vars[index].set(bool(record['OK']))
+                                self.ng_vars[index].set(bool(record['NG']))
+                                self.num_inputs[index].delete(0, tk.END)
+                                self.num_inputs[index].insert(0, record['num_labels'])
+                                self.wn_inputs[index].delete(0, tk.END)
+                                self.wn_inputs[index].insert(0, record['width_min'])
+                                self.wx_inputs[index].delete(0, tk.END)
+                                self.wx_inputs[index].insert(0, record['width_max'])
+                                self.hn_inputs[index].delete(0, tk.END)
+                                self.hn_inputs[index].insert(0, record['height_min'])                
+                                self.hx_inputs[index].delete(0, tk.END)
+                                self.hx_inputs[index].insert(0, record['height_max'])
+                                self.plc_inputs[index].delete(0, tk.END)
+                                self.plc_inputs[index].insert(0, record['PLC_value'])
+                                self.conf_scales[index].set(record['cmpnt_conf'])
                 elif self.datasets_format_model.get() == 'OBB':
-                    for i1 in range(len(model.names)):          
+                    for index in range(len(model.names)):          
                         for record in records:                
-                            if record['label_name'] == model.names[i1]:
-                                self.join[i1].set(bool(record['join_detect']))
-                                self.ok_vars[i1].set(bool(record['OK']))
-                                self.ng_vars[i1].set(bool(record['NG']))
-                                self.num_inputs[i1].delete(0, tk.END)
-                                self.num_inputs[i1].insert(0, record['num_labels'])
-                                self.wn_inputs[i1].delete(0, tk.END)
-                                self.wn_inputs[i1].insert(0, record['width_min'])
-                                self.wx_inputs[i1].delete(0, tk.END)
-                                self.wx_inputs[i1].insert(0, record['width_max'])
-                                self.hn_inputs[i1].delete(0, tk.END)
-                                self.hn_inputs[i1].insert(0, record['height_min'])                
-                                self.hx_inputs[i1].delete(0, tk.END)
-                                self.hx_inputs[i1].insert(0, record['height_max'])
-                                self.plc_inputs[i1].delete(0, tk.END)
-                                self.plc_inputs[i1].insert(0, record['PLC_value'])
-                                self.conf_scales[i1].set(record['cmpnt_conf'])
-                                self.rn_inputs[i1].delete(0, tk.END)
-                                self.rn_inputs[i1].insert(0, record['rotage_min'])                
-                                self.rx_inputs[i1].delete(0, tk.END)
-                                self.rx_inputs[i1].insert(0, record['rotage_max'])
+                            if record['label_name'] == model.names[index]:
+                                self.join[index].set(bool(record['join_detect']))
+                                self.ok_vars[index].set(bool(record['OK']))
+                                self.ng_vars[index].set(bool(record['NG']))
+                                self.num_inputs[index].delete(0, tk.END)
+                                self.num_inputs[index].insert(0, record['num_labels'])
+                                self.wn_inputs[index].delete(0, tk.END)
+                                self.wn_inputs[index].insert(0, record['width_min'])
+                                self.wx_inputs[index].delete(0, tk.END)
+                                self.wx_inputs[index].insert(0, record['width_max'])
+                                self.hn_inputs[index].delete(0, tk.END)
+                                self.hn_inputs[index].insert(0, record['height_min'])                
+                                self.hx_inputs[index].delete(0, tk.END)
+                                self.hx_inputs[index].insert(0, record['height_max'])
+                                self.plc_inputs[index].delete(0, tk.END)
+                                self.plc_inputs[index].insert(0, record['PLC_value'])
+                                self.conf_scales[index].set(record['cmpnt_conf'])
+                                self.rn_inputs[index].delete(0, tk.END)
+                                self.rn_inputs[index].insert(0, record['rotage_min'])                
+                                self.rx_inputs[index].delete(0, tk.END)
+                                self.rx_inputs[index].insert(0, record['rotage_max'])
             except IndexError as e:
                 messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
@@ -1015,25 +1083,25 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         except: 
             pass
         try:
-            for i1 in range(len(model1.names)):          
+            for index in range(len(model1.names)):          
                 for record in records:                
-                    if record['label_name'] == model1.names[i1]:
-                        self.join[i1].set(bool(record['join_detect']))
-                        self.ok_vars[i1].set(bool(record['OK']))
-                        self.ng_vars[i1].set(bool(record['NG']))
-                        self.num_inputs[i1].delete(0, tk.END)
-                        self.num_inputs[i1].insert(0, record['num_labels'])
-                        self.wn_inputs[i1].delete(0, tk.END)
-                        self.wn_inputs[i1].insert(0, record['width_min'])
-                        self.wx_inputs[i1].delete(0, tk.END)
-                        self.wx_inputs[i1].insert(0, record['width_max'])
-                        self.hn_inputs[i1].delete(0, tk.END)
-                        self.hn_inputs[i1].insert(0, record['height_min'])                
-                        self.hx_inputs[i1].delete(0, tk.END)
-                        self.hx_inputs[i1].insert(0, record['height_max'])
-                        self.plc_inputs[i1].delete(0, tk.END)
-                        self.plc_inputs[i1].insert(0, record['PLC_value'])
-                        self.conf_scales[i1].set(record['cmpnt_conf'])
+                    if record['label_name'] == model1.names[index]:
+                        self.join[index].set(bool(record['join_detect']))
+                        self.ok_vars[index].set(bool(record['OK']))
+                        self.ng_vars[index].set(bool(record['NG']))
+                        self.num_inputs[index].delete(0, tk.END)
+                        self.num_inputs[index].insert(0, record['num_labels'])
+                        self.wn_inputs[index].delete(0, tk.END)
+                        self.wn_inputs[index].insert(0, record['width_min'])
+                        self.wx_inputs[index].delete(0, tk.END)
+                        self.wx_inputs[index].insert(0, record['width_max'])
+                        self.hn_inputs[index].delete(0, tk.END)
+                        self.hn_inputs[index].insert(0, record['height_min'])                
+                        self.hx_inputs[index].delete(0, tk.END)
+                        self.hx_inputs[index].insert(0, record['height_max'])
+                        self.plc_inputs[index].delete(0, tk.END)
+                        self.plc_inputs[index].insert(0, record['PLC_value'])
+                        self.conf_scales[index].set(record['cmpnt_conf'])
         except IndexError as e:
             messagebox.showerror("Error", f"Load parameters failed! Error: {str(e)}")
 
@@ -1121,19 +1189,19 @@ class base_handle_video(PLC_Connection,MySQL_Connection):
         results = self.model.track(frame, persist=True, classes=classes)
         model_settings = [
             {
-                'label_name':  self.model_name_labels[i1].cget("text"),
-                'join_detect': self.join[i1].get(),
-                'OK_jont': self.ok_vars[i1].get(),
-                'NG_jont': self.ng_vars[i1].get(),
-                'num_labels': int(self.num_inputs[i1].get()),
-                'width_min': int(self.wn_inputs[i1].get()),
-                'width_max': int(self.wx_inputs[i1].get()),
-                'height_min': int(self.hn_inputs[i1].get()),
-                'height_max': int(self.hx_inputs[i1].get()),
-                'PLC_value': int(self.plc_inputs[i1].get()),
-                'cmpnt_conf': int(self.conf_scales[i1].get()),
+                'label_name':  self.model_name_labels[index].cget("text"),
+                'join_detect': self.join[index].get(),
+                'OK_jont': self.ok_vars[index].get(),
+                'NG_jont': self.ng_vars[index].get(),
+                'num_labels': int(self.num_inputs[index].get()),
+                'width_min': int(self.wn_inputs[index].get()),
+                'width_max': int(self.wx_inputs[index].get()),
+                'height_min': int(self.hn_inputs[index].get()),
+                'height_max': int(self.hx_inputs[index].get()),
+                'PLC_value': int(self.plc_inputs[index].get()),
+                'cmpnt_conf': int(self.conf_scales[index].get()),
             }
-            for i1 in range(len(self.model_name_labels))
+            for index in range(len(self.model_name_labels))
         ]
         settings_dict = {setting['label_name']: setting for setting in model_settings}
         if results[0].boxes.id is not None:
