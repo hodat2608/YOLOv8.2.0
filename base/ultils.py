@@ -185,6 +185,7 @@ class Base:
         self.image_files = []
         self.current_image_index = 0
         self.state = 0
+        self.right_angle = 180
         self.password = " "
         self.lockable_widgets = [] 
         self.lock_params = []
@@ -512,6 +513,7 @@ class Base:
                             continue
                         params = list(map(float, line.split()))
                         class_id,x_center,y_center,width,height,angle = params
+                        angle = abs(angle) if np.sign(angle) == -1 else self.right_angle-angle
                         converted_label = self.xywhr2xyxyxyxy(class_id,x_center,y_center,width,height,angle,im_height,im_width)
                         out_file.write(" ".join(map(str, converted_label)) + '\n')
                 progress_retail = (index + 1) / total_fl * 100

@@ -17,7 +17,7 @@ from base.config import *
 import numpy as np
 import cv2
 from base.ultils import *
-
+from base.constants import *
 class Training_Data(Base):
     def __init__(self, *args, **kwargs):
         super(Training_Data, self).__init__(*args, **kwargs)
@@ -182,10 +182,10 @@ class Training_Data(Base):
 
         ttk.Label(patience, text='Patience:', font=('ubuntu', 12), width=15).grid(row=1, column=1, padx=10, pady=5, sticky="w")
         
-        optionsepochs = [100, 200, 300]
+        optionsepochs = [50, 100, 150]
         self.patience_model = ttk.Combobox(patience, values=optionsepochs, width=7)
         self.patience_model.grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=5, ipady=2)
-        self.patience_model.set(300)  
+        self.patience_model.set(50)  
 
         #####
 
@@ -244,14 +244,16 @@ class Training_Data(Base):
         self.save = tk.BooleanVar(value=True)
         ttk.Checkbutton(save_frame, variable=self.save).grid(row=1, column=2, sticky="w")
 
-
         # cache
         cache_frame = ttk.Frame(inner_frame_1)
         cache_frame.grid(row=13, column=0, columnspan=2, padx=(15, 30), pady=10, sticky="w")
 
         ttk.Label(cache_frame, text='Cache:', font=('ubuntu', 12), width=15).grid(row=1, column=1, padx=10, pady=5, sticky="w")
-        self.cache = tk.BooleanVar(value=True)
-        ttk.Checkbutton(cache_frame, variable=self.cache).grid(row=1, column=2, sticky="w")
+        
+        optionsdevice = ['RAM','Disk I/O','HDD']
+        self.cache  = ttk.Combobox(cache_frame, values=optionsdevice, width=7)
+        self.cache .grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=5, ipady=2)
+        self.cache .set('Disk I/O')
 
         # Workers
         workers_frame = ttk.Frame(inner_frame_1)
@@ -266,7 +268,7 @@ class Training_Data(Base):
         optimizer_frame.grid(row=15, column=0, columnspan=2, padx=(15, 30), pady=10, sticky="w")
 
         ttk.Label(optimizer_frame, text='Optimizer:', font=('ubuntu', 12), width=15).grid(row=1, column=1, padx=10, pady=5, sticky="w")
-        self.optimizer_model = ttk.Combobox(optimizer_frame, values=["auto", "adam", "sgd"], width=7)
+        self.optimizer_model = ttk.Combobox(optimizer_frame, values=['SGD', 'Adam', 'AdamW','auto'], width=7)
         self.optimizer_model.grid(row=1, column=2, columnspan=2, padx=(0, 10), pady=5, sticky="w", ipadx=5, ipady=2)
         self.optimizer_model.set("auto")
 
@@ -454,12 +456,19 @@ class Training_Data(Base):
                 device_model = self.device_model.get()
                 
             callback = (
-                f'python {self.models_train} --config "{os.path.join(self.models_path,"yolov8.yaml")}" '
-                f'--data "{os.path.join(self.models_path,"datasets.yaml")}" --epochs {str(self.epochs_model.get())} '
-                f'--imgsz {str(self.size_model.get())} --batch {str(self.batch_model.get())} '
-                f'--device {str(device_model)} --project "{None if self.source_save_result_entry.get()==''else self.source_save_result_entry.get()}" '
+                f'python {self.models_train} '
+                f'--config "{os.path.join(self.models_path,"yolov8.yaml")}" '
+                f'--data "{os.path.join(self.models_path,"datasets.yaml")}" '
+                f'--epochs {str(self.epochs_model.get())} '
+                f'--imgsz {str(self.size_model.get())} '
+                f'--batch {str(self.batch_model.get())} '
+                f'--device {str(device_model)} '
+                f'--project "{None if self.source_save_result_entry.get()==''else self.source_save_result_entry.get()}" '
                 f'--name {str(self.name_results_entry.get())} '
                 f'--workers {str(self.workers.get())} '
+                f'--patience {str(self.patience_model.get())} '
+                f'--cache {str(cache_option(self.cache.get()))} '  
+                f'--optimizer {str(self.optimizer_model.get())} '
                 )
 
             self.execute_command(callback)
@@ -543,12 +552,19 @@ class Training_Data(Base):
                 device_model = self.device_model.get()
 
             callback = (
-                f'python {self.models_train} --config "{os.path.join(self.models_path,"yolov8.yaml")}" '
-                f'--data "{os.path.join(self.models_path,"datasets.yaml")}" --epochs {str(self.epochs_model.get())} '
-                f'--imgsz {str(self.size_model.get())} --batch {str(self.batch_model.get())} '
-                f'--device {str(device_model)} --project "{None if self.source_save_result_entry.get()==''else self.source_save_result_entry.get()}" '
+                f'python {self.models_train} '
+                f'--config "{os.path.join(self.models_path,"yolov8.yaml")}" '
+                f'--data "{os.path.join(self.models_path,"datasets.yaml")}" '
+                f'--epochs {str(self.epochs_model.get())} '
+                f'--imgsz {str(self.size_model.get())} '
+                f'--batch {str(self.batch_model.get())} '
+                f'--device {str(device_model)} '
+                f'--project "{None if self.source_save_result_entry.get()==''else self.source_save_result_entry.get()}" '
                 f'--name {str(self.name_results_entry.get())} '
                 f'--workers {str(self.workers.get())} '
+                f'--patience {str(self.patience_model.get())} '
+                f'--cache {str(cache_option(self.cache.get()))} '  
+                f'--optimizer {str(self.optimizer_model.get())} '
                 )
 
             self.execute_command(callback)

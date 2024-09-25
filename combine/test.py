@@ -1,41 +1,24 @@
 
 import torch,os,cv2,shutil
 import numpy as np
-def xywhr2xyxyxyxy_original(class_id,x,img_width,img_height):
-    """
-    Convert batched Oriented Bounding Boxes (OBB) from [xywh, rotation] to [xy1, xy2, xy3, xy4]. Rotation values should
-    be in degrees from 0 to 90.
-
-    Args:
-        x (numpy.ndarray | torch.Tensor): Boxes in [cx, cy, w, h, rotation] format of shape (n, 5) or (b, n, 5).
-
-    Returns:
-        (numpy.ndarray | torch.Tensor): Converted corner points of shape (n, 4, 2) or (b, n, 4, 2).
-    """
-    cos, sin, cat, stack = (
-        (torch.cos, torch.sin, torch.cat, torch.stack)
-        if isinstance(x, torch.Tensor)
-        else (np.cos, np.sin, np.concatenate, np.stack)
-    )
-
-    ctr = x[..., :2]
-    w, h, angle = (x[..., i : i + 1] for i in range(2, 5))
-    cos_value, sin_value = cos(angle), sin(angle)
-    vec1 = [w / 2 * cos_value, w / 2 * sin_value]
-    vec2 = [-h / 2 * sin_value, h / 2 * cos_value]
-    vec1 = cat(vec1, -1)
-    vec2 = cat(vec2, -1)
-    pt1 = ctr + vec1 + vec2
-    pt2 = ctr + vec1 - vec2
-    pt3 = ctr - vec1 - vec2
-    pt4 = ctr - vec1 + vec2
-
-    corners = torch.stack([pt1, pt2, pt3, pt4], dim=-2)
-    corners_normalized = corners.clone()
-    corners_normalized[..., 0] = corners[..., 0] / img_width
-    corners_normalized[..., 1] = corners[..., 1] / img_height 
-
-    return [int(class_id)] + corners_normalized.view(-1).tolist()
+def xywhr2xyxyxyxy(class_id,x_center,y_center,width,height,angle,im_height,im_width):
+        half_width = width / 2
+        half_height = height / 2
+        angle_rad = np.deg2rad(angle)
+        rotation_matrix = np.array([
+            [np.cos(angle_rad), -np.sin(angle_rad)],
+            [np.sin(angle_rad), np.cos(angle_rad)]
+        ])
+        corners = np.array([
+            [-half_width, -half_height],  
+            [half_width, -half_height], 
+            [half_width, half_height],   
+            [-half_width, half_height]
+        ])
+        rotated_corners = np.dot(corners, rotation_matrix)
+        final_corners = rotated_corners + np.array([x_center, y_center])
+        normalized_corners = final_corners / np.array([im_width,im_height])
+        return [int(class_id)] + normalized_corners.flatten().tolist()
 
 def get_params_xywhr2xyxyxyxy(des_path):
     input_folder = des_path
@@ -58,13 +41,12 @@ def get_params_xywhr2xyxyxyxy(des_path):
                     if "YOLO_OBB" in line:
                         continue
                     params = list(map(float, line.split()))
-                    class_id = params[0]
-                    bbox_list = params[1:]
-                    bbox_tensor = torch.tensor(bbox_list, dtype=torch.float32)
-                    bbox_tensor_2d = bbox_tensor.unsqueeze(0)
-                    converted_label = xywhr2xyxyxyxy_original(class_id,bbox_tensor_2d,im_width,im_height)
-                    out_file.write(" ".join(map(str, converted_label)) + '\n')
+                    class_id,x_center,y_center,width,height,angle = params
+                    angle = abs(angle) if np.sign(angle) == -1 else 180-angle
+                    print(class_id,x_center,y_center,width,height,angle)
+                    converted_label = xywhr2xyxyxyxy(class_id,x_center,y_center,width,height,angle,im_height,im_width)
+                    # print(converted_label)           
     #         os.replace(output_path, input_path)
     # shutil.rmtree(output_folder)
-des_path = r'C:\Users\CCSX009\Desktop\TTT'
+des_path = r'C:\Users\CCSX009\Desktop\compare\label_obb'
 get_params_xywhr2xyxyxyxy(des_path)

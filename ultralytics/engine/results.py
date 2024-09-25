@@ -124,6 +124,7 @@ class Results(SimpleClass):
         self._keys = "boxes", "masks", "probs", "keypoints", "obb"
         self.green = (0, 128, 0)
         self.red = (0, 0, 255)
+        self.blue = (0,0,205)
 
     def __getitem__(self, idx):
         """Return a Results object for the specified index."""
