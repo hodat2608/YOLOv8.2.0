@@ -24,12 +24,13 @@ import sys
 import os
 from functools import partial 
 
-class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
+class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
 
-    def __init__(self, *args, **kwargs):
-        super(Model_Camera_1, self).__init__(*args, **kwargs)
+    def __init__(self,notebook,*args, **kwargs):
+        super(Model_Camera_2, self).__init__(*args, **kwargs)
         super().__init__()
         torch.cuda.set_device(0)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.database = MySQL_Connection("127.0.0.1","root1","987654321","connect_database_model") 
         self.name_table = 'model_connection_model1'
         self.item_code_cfg = "EDFWOBB"
@@ -66,42 +67,55 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         self.time_processing_output = None
         self.result_detection = None
         self.cls = False
-        self.device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.img_frame = None
         self.process_image_func = None
+        
         self.processing_functions = {
             'HBB': self.run_func_hbb,
             'OBB': self.run_func_obb
         }
 
-    def on_option_change(self, event,Frame_2):
+        display_camera_tab = ttk.Frame(notebook)
+        notebook.add(display_camera_tab, text="Display Camera")
+        self.tab = ttk.Frame(display_camera_tab)
+        self.tab.pack(side=tk.RIGHT, fill="both", expand=True)
+
+        self.settings_notebook = ttk.Notebook(notebook)
+        notebook.add(self.settings_notebook, text="Camera Configure Setup")
+
+        self.configuration_frame()
+        self.layout_camframe()
+        self.funcloop()
+
+    def on_option_change(self,event,Frame_2):
         selected_format = self.datasets_format_model.get()
         self.process_image_func = self.processing_functions.get(selected_format, None)
         self.datasets_format_model_confirm(Frame_2)
         super().process_func_local(selected_format)
         
     def mohica(self):
-        filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
+        filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera2"
         filename = r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240914085107656 - Copy (2).jpg"
         shutil.copy(filename,filepath)
 
-    def display_images_c1(self, camera_frame, camera_number):
+    def extract(self):
         width = 800
         height = 800
         t1 = time.time()
-        image_paths = glob.glob(f"C:/Users/CCSX009/Documents/yolov5/test_image/camera{camera_number}/*.jpg")
+        image_paths = glob.glob(f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1/*.jpg")
         if len(image_paths) == 0:
             pass
         else:
             for filename in image_paths:
                 img1_orgin = cv2.imread(filename)
-                for widget in camera_frame.winfo_children():
+                for widget in self.img_frame.winfo_children():
                     widget.destroy()
                 image_result, results_detect, list_label_ng = self.process_image_func(img1_orgin, width, height) 
                 self.result_detection.config(text=results_detect, fg='green' if results_detect == 'OK' else 'red')
                 list_label_ng = ','.join(list_label_ng)
                 img_pil = Image.fromarray(image_result)
                 photo = ImageTk.PhotoImage(img_pil)
-                canvas = tk.Canvas(camera_frame, width=width, height=height)
+                canvas = tk.Canvas(self.img_frame, width=width, height=height)
                 canvas.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
                 canvas.create_image(0, 0, anchor=tk.NW, image=photo)
                 canvas.image = photo
@@ -113,34 +127,34 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
                 canvas.create_text(10, 70, anchor=tk.NW, text=f'Label: {list_label_ng}', fill='red', font=('Segoe UI', 20))
                 os.remove(filename)
 
-    def update_images(self,window,camera1_frame):
-        self.display_images_c1(camera1_frame,1)
-        window.after(50, self.update_images,window,camera1_frame)
+    def funcloop(self):
+        self.extract()
+        self.img_frame.after(50, self.funcloop)
 
-    def create_camera_frame_cam1(self, tab1, camera_number):
+    def layout_camframe(self):
         style = ttk.Style()
         style.configure("Custom.TLabelframe", borderwidth=0)
         style.configure("Custom.TLabelframe.Label", background="white", foreground="white")
 
-        frame_1 = ttk.LabelFrame(tab1, width=900, height=900, style="Custom.TLabelframe")
-        frame_1.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        frame = ttk.LabelFrame(self.tab, width=900, height=900, style="Custom.TLabelframe")
+        frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-        camera_frame = ttk.LabelFrame(frame_1, text=f"Camera {camera_number}", width=800, height=800)
-        camera_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
+        self.img_frame = ttk.LabelFrame(frame, text=f"Camera", width=800, height=800)
+        self.img_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
 
-        time_frame = ttk.LabelFrame(frame_1, text=f"Time Processing Camera {camera_number}", width=300, height=100)
+        time_frame = ttk.LabelFrame(frame, text=f"Time Processing Camera", width=300, height=100)
         time_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
 
         self.time_processing_output = tk.Label(time_frame, text='0 ms', fg='black', font=('Segoe UI', 30), width=10, height=1, anchor='center')
         self.time_processing_output.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
 
-        result = ttk.LabelFrame(frame_1, text=f"Result Camera {camera_number}", width=300, height=100)
+        result = ttk.LabelFrame(frame, text=f"Result Camera", width=300, height=100)
         result.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
         self.result_detection = tk.Label(result, text='ERROR', fg='red', font=('Segoe UI', 30), width=10, height=1, anchor='center')
         self.result_detection.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
 
-        bonus = ttk.LabelFrame(frame_1, text=f"Bonus {camera_number}", width=300, height=100)
+        bonus = ttk.LabelFrame(frame, text=f"Bonus", width=300, height=100)
         bonus.grid(row=1, column=2, padx=10, pady=5, sticky="ew")
 
         bonus_test = tk.Label(bonus, text='Bonus', fg='red', font=('Segoe UI', 30), width=10, height=1, anchor='center')
@@ -149,18 +163,12 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         move = tk.Button(bonus, text="Test time handle", command=lambda: self.mohica())
         move.grid(row=0, column=1, padx=(0, 8), pady=3, sticky="w", ipadx=5, ipady=2)
 
-        frame_1.grid_columnconfigure(0, weight=1)
-        frame_1.grid_columnconfigure(1, weight=1)
-        frame_1.grid_columnconfigure(2, weight=1)
-        frame_1.grid_rowconfigure(0, weight=1)
-        frame_1.grid_rowconfigure(1, weight=1)
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_columnconfigure(2, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
 
-        return camera_frame
-
-    def Display_Camera(self,tab1):
-        camera1_frame = self.create_camera_frame_cam1(tab1, 1)   
-        return camera1_frame
-    
     def connect_database(self):
         cursor,db_connection,check_connection,reconnect = super().connect_database()
         return cursor,db_connection,check_connection,reconnect
@@ -234,16 +242,16 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
     def load_first_img(self):
         return super().load_first_img()
        
-    def Camera_Settings(self, settings_notebook):
+    def configuration_frame(self):
         records, load_path_weight, load_item_code, load_confidence_all_scale,load_dataset_format = self.load_data_model()
-        self.model = YOLO(load_path_weight, task='detect').to(device=self.device1)
+        self.model = YOLO(load_path_weight, task='detect').to(device=self.device)
         self.load_first_img()
-        camera_settings_tab = ttk.Frame(settings_notebook)
-        settings_notebook.add(camera_settings_tab, text="Camera 1")
+        configuration_frame_tab = ttk.Frame(self.settings_notebook)
+        self.settings_notebook.add(configuration_frame_tab, text="Camera 1")
 
-        canvas1 = tk.Canvas(camera_settings_tab)
-        scrollbar_y = ttk.Scrollbar(camera_settings_tab, orient="vertical", command=canvas1.yview)
-        scrollbar_x = ttk.Scrollbar(camera_settings_tab, orient="horizontal", command=canvas1.xview)
+        canvas1 = tk.Canvas(configuration_frame_tab)
+        scrollbar_y = ttk.Scrollbar(configuration_frame_tab, orient="vertical", command=canvas1.yview)
+        scrollbar_x = ttk.Scrollbar(configuration_frame_tab, orient="horizontal", command=canvas1.xview)
         scrollable_frame = ttk.Frame(canvas1)
 
         scrollable_frame.bind(
@@ -261,8 +269,8 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
         scrollbar_y.grid(row=0, column=1, sticky="ns")
         scrollbar_x.grid(row=1, column=0, sticky="ew")
 
-        camera_settings_tab.grid_columnconfigure(0, weight=1)
-        camera_settings_tab.grid_rowconfigure(0, weight=1)
+        configuration_frame_tab.grid_columnconfigure(0, weight=1)
+        configuration_frame_tab.grid_rowconfigure(0, weight=1)
 
         frame_width = 1500
         frame_height = 2000
@@ -753,15 +761,6 @@ class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
             self.rx_inputs.append(rx_input)
             self.lock_params.append(rx_input)
             self.lockable_widgets.append(rx_input)
-
-            # rotage_checkbox_var = tk.BooleanVar()
-            # rotage_join_checkbox = tk.Checkbutton(Frame_2, variable=rotage_checkbox_var, onvalue=True, offvalue=False, anchor='w')
-            # rotage_join_checkbox.grid()
-            # rotage_join_checkbox.var = rotage_checkbox_var
-            # row_widgets.append(rotage_join_checkbox)
-            # self.rotage_join.append(rotage_checkbox_var)
-            # self.lock_params.append(rotage_join_checkbox)
-            # self.lockable_widgets.append(rotage_join_checkbox)
 
             widgets_option_layout_parameters.append(row_widgets)
 

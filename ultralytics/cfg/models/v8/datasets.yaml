@@ -1,4 +1,4 @@
 train: C:\Users\CCSX009\Documents\ultralytics-main\datasets/train/images
 val: C:\Users\CCSX009\Documents\ultralytics-main\datasets/valid/images
-nc: 2
-names: ['mat_a_plate', 'truc_plate']
+nc: 1
+names: ['truc_plate']

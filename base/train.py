@@ -43,7 +43,7 @@ class Training_Data(Base):
         return super().format_params_xywhr2xyxyxyxy(des_path, progress_label)
 
     def get_params_xywhr2xyxyxyxy_original_ops(self, des_path, progress_label):
-        return super().get_params_xywhr2xyxyxyxy_original_ops(des_path, progress_label)
+        return get_params_xywhr2xyxyxyxy_original_ops(des_path, progress_label)
 
     def layout(self,settings_notebook,window):
        
@@ -147,10 +147,10 @@ class Training_Data(Base):
 
         ttk.Label(imgsz, text='Image size:', font=('ubuntu', 12), width=15).grid(row=1, column=1, padx=10, pady=5, sticky="w")
         
-        options = [480, 608, 832]
+        options = [480, 640, 832]
         self.size_model = ttk.Combobox(imgsz, values=options, width=7)
         self.size_model.grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=5, ipady=2)
-        self.size_model.set(608)
+        self.size_model.set(640)
 
         #####
 

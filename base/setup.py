@@ -15,13 +15,11 @@ import argparse
 torch.cuda.empty_cache()
 def main():
     parser = argparse.ArgumentParser(description="Train a YOLO model.")
-    parser.add_argument('--config', type=str, default="training.yaml",
-                        help="Path to the YOLO configuration file.")
-    parser.add_argument('--data', type=str, default="data.yaml",
-                        help="Path to the dataset configuration file.")
+    parser.add_argument('--config', type=str, default="training.yaml", help="Path to the YOLO configuration file.")
+    parser.add_argument('--data', type=str, default="data.yaml", help="Path to the dataset configuration file.")
     parser.add_argument('--epochs', type=int, default=300, help="Number of training epochs.")
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
-    parser.add_argument('--imgsz', type=int, default=480, help="Image size for training.")
+    parser.add_argument('--imgsz', type=int, default=640, help="Image size for training.")
     parser.add_argument('--batch', type=int, default=2, help="Batch size for training.")
     parser.add_argument('--cache', type=str2cache, nargs='?', default=False, help="Caching options: True (cache in RAM), 'disk' (cache on disk), or False (disable caching).")
     parser.add_argument('--device', type=str, choices=['cpu', 'cuda', 'mps'], default=None, help="Device to use for training (cpu or cuda).")
@@ -34,7 +32,7 @@ def main():
     device = args.device if args.device else ('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
     model.train(data=args.data, epochs=args.epochs, patience=args.patience ,imgsz=args.imgsz, batch=args.batch, cache=args.cache, device=device,project=args.project,workers=args.workers,name=args.name,optimizer=args.optimizer)
-    metrics = model.val()
+    model.val()
 
 if __name__ == '__main__':
     main()
