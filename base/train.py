@@ -394,6 +394,7 @@ class Training_Data(Base):
         if self.source_FOLDER_entry.get() == None or self.source_FOLDER_entry.get() == '' or self.source_CLASS_entry.get() == None or self.source_CLASS_entry.get() == '':
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
+            os.makedirs(os.path.join(self.current_dir, 'datasets'),exist_ok=True)
             des_path = os.path.join(self.current_dir, 'datasets')
             src_path = self.source_FOLDER_entry.get()
             for root, dirs, file in os.walk(des_path, topdown=False):
@@ -478,6 +479,7 @@ class Training_Data(Base):
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
             src_path = self.source_FOLDER_entry.get()
+            os.makedirs(os.path.join(self.current_dir, 'datasets'),exist_ok=True)
             des_path = os.path.join(self.current_dir, 'datasets')
 
             if not os.path.exists(des_path):
@@ -534,17 +536,18 @@ class Training_Data(Base):
                     self.myclasses.append(text)
 
             self.myclasses = [cls for cls in self.myclasses if cls]
-            with open(os.path.join(self.models_path,'datasets.yaml'), "w", encoding='utf-8') as f:
-                f.write('train: ' + os.path.join(os.getcwd() , 'datasets/train/images'))
-                f.write('\n')
-                f.write('val: ' + os.path.join(os.getcwd(), 'datasets/valid/images'))
-                f.write('\n')
-                f.write('nc: '  + str(len(self.myclasses)))     
-                f.write('\n')
-                f.write('names: '  + str(self.myclasses))      
-            
+            datasets_yaml_content = (
+                f"train: {os.path.join(os.getcwd(), 'datasets/train/images')}\n"
+                f"val: {os.path.join(os.getcwd(), 'datasets/valid/images')}\n"
+                f"nc: {len(self.myclasses)}\n"
+                f"names: {self.myclasses}\n"
+            )
+
+            with open(os.path.join(self.models_path, 'datasets.yaml'), "w", encoding='utf-8') as f:
+                f.write(datasets_yaml_content)
+  
             with open(os.path.join(self.models_path,'yolov8.yaml'), "w", encoding='utf-8') as f:
-                f.write('nc: ' +  str(len(self.myclasses)) + '\n' + YOLOV8_OBB_YAML)
+                f.write(f"nc: {len(self.myclasses)}\n{YOLOV8_OBB_YAML}")
 
             if  self.device_model.get() == "Auto" :
                 device_model = self.device_recognize
