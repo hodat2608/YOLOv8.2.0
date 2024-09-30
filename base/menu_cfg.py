@@ -1,11 +1,10 @@
-import sys
-from pathlib import Path
-current_dir = Path(__file__).resolve().parent.parent
-ultralytics_main_dir = current_dir
-sys.path.append(str(ultralytics_main_dir))
+# import sys
+# from pathlib import Path
+# current_dir = Path(__file__).resolve().parent.parent
+# ultralytics_main_dir = current_dir
+# sys.path.append(str(ultralytics_main_dir))
 import tkinter as tk
-from model_1_copy import *
-from model_2_copy import *
+from base.model_1_config import *
 from base.train import *
 from base.extract_vid import *
 from tkinter import ttk
@@ -13,6 +12,12 @@ from base.ultils import removefile
 from tkinter import *
 from tkinter import messagebox
 from base.labling import *
+
+def open_label_img_menu(parent_menu):
+    label_menu = Menu(parent_menu, tearoff=0)
+    label_menu.add_command(label="Label OBB", command=open_label_img_obb)
+    label_menu.add_command(label="Label HBB", command=open_label_img_hbb)
+    parent_menu.add_cascade(label="Label Image", menu=label_menu)
 
 def open_tools_window(root):
     tools_window = Toplevel(root)
@@ -75,7 +80,7 @@ def display_layout(notebook, window):
     progress_var = tk.DoubleVar()
     progress_bar = ttk.Progressbar(window, orient="horizontal", length=200, mode="determinate", variable=progress_var)
     progress_label = tk.Label(window, text="0%")
-    loading_label = tk.Label(window, text="Loading model...")
+    loading_label = tk.Label(window, text="Loading model, please wait...", font=("Arial", 25))
 
     def update_progress(step, total_steps):
         progress = (step / total_steps) * 100

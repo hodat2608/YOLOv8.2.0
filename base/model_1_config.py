@@ -1,8 +1,9 @@
-import sys
-from pathlib import Path
-current_dir = Path(__file__).resolve().parent.parent
-ultralytics_main_dir = current_dir
-sys.path.append(str(ultralytics_main_dir))
+# import sys
+# from pathlib import Path
+# current_dir = Path(__file__).resolve().parent.parent
+# ultralytics_main_dir = current_dir
+# sys.path.append(str(ultralytics_main_dir))
+import root_path
 from ultralytics import YOLO
 from base.ultils import Base,MySQL_Connection,PLC_Connection,removefile
 import tkinter as tk
@@ -24,10 +25,11 @@ import sys
 import os
 from functools import partial 
 
-class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
+
+class Model_Camera_1(Base,MySQL_Connection,PLC_Connection):
 
     def __init__(self,notebook,*args, **kwargs):
-        super(Model_Camera_2, self).__init__(*args, **kwargs)
+        super(Model_Camera_1, self).__init__(*args, **kwargs)
         super().__init__()
         torch.cuda.set_device(0)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -78,7 +80,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         display_camera_tab = ttk.Frame(notebook)
         notebook.add(display_camera_tab, text="Display Camera")
         self.tab = ttk.Frame(display_camera_tab)
-        self.tab.pack(side=tk.RIGHT, fill="both", expand=True)
+        self.tab.pack(side=tk.LEFT, fill="both", expand=True)
 
         self.settings_notebook = ttk.Notebook(notebook)
         notebook.add(self.settings_notebook, text="Camera Configure Setup")
@@ -94,7 +96,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         super().process_func_local(selected_format)
         
     def mohica(self):
-        filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera2"
+        filepath= f"C:/Users/CCSX009/Documents/yolov5/test_image/camera1"
         filename = r"C:\Users\CCSX009\Documents\yolov5\test_image\Image_bonu20240914085107656 - Copy (2).jpg"
         shutil.copy(filename,filepath)
 
@@ -185,8 +187,8 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
     def load_data_model(self):
         return super().load_data_model()
     
-    def load_parameters_model(self, model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,Frame_2):
-        return super().load_parameters_model(model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,Frame_2)
+    def load_parameters_model(self, model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,size_model,Frame_2):
+        return super().load_parameters_model(model1, load_path_weight, load_item_code, load_confidence_all_scale, records,load_dataset_format,size_model,Frame_2)
     
     def change_model(self, Frame_2):
         return super().change_model(Frame_2)
@@ -243,7 +245,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         return super().load_first_img()
        
     def configuration_frame(self):
-        records, load_path_weight, load_item_code, load_confidence_all_scale,load_dataset_format = self.load_data_model()
+        records, load_path_weight, load_item_code, load_confidence_all_scale,load_dataset_format,size_model = self.load_data_model()
         self.model = YOLO(load_path_weight, task='detect').to(device=self.device)
         self.load_first_img()
         configuration_frame_tab = ttk.Frame(self.settings_notebook)
@@ -289,7 +291,7 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         self.datasets_format_model.bind("<<ComboboxSelected>>", partial(self.on_option_change, Frame_2=Frame_2))
         self.on_option_change(None, Frame_2)
         self.option_layout_parameters(Frame_2,self.model)
-        self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,Frame_2)
+        self.load_parameters_model(self.model,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,size_model,Frame_2)
         self.toggle_state_option_layout_parameters()
 
 
@@ -348,7 +350,6 @@ class Model_Camera_2(Base,MySQL_Connection,PLC_Connection):
         options = [480, 640, 832]
         self.size_model = ttk.Combobox(Frame_1, values=options, width=7)
         self.size_model.grid(row=7, column=0, columnspan=2, padx=30, pady=5, sticky="nws", ipadx=5, ipady=2)
-        self.size_model.set(640)
         self.lockable_widgets.append(self.size_model)
       
         name_item_code = ttk.Label(Frame_1, text='Item Code', font=('Segoe UI', 12))

@@ -1,8 +1,9 @@
-import sys
-from pathlib import Path
-current_dir = Path(__file__).resolve().parent.parent
-ultralytics_main_dir = current_dir
-sys.path.append(str(ultralytics_main_dir))
+# import sys
+# from pathlib import Path
+# current_dir = Path(__file__).resolve().parent.parent
+# ultralytics_main_dir = current_dir
+# sys.path.append(str(ultralytics_main_dir))
+import root_path
 import tkinter as tk
 # from model_1 import *
 from base.train import *
@@ -16,9 +17,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 # from base.menu import *
 from base.labling import *
-
-from base.menu_copy import *
-from base.model_1_copy import *
+from base.menu_cfg import *
+from base.model_1_config import *
 
 def main():
     global menubar
@@ -32,7 +32,7 @@ def main():
     menubar = Menu(window)
     filemenu = Menu(menubar, tearoff=0)
     filemenu.add_command(label="Open Camera Display", command=lambda: display_layout(notebook, window))
-    filemenu.add_command(label="Label Image", command=lambda: open_label_img())
+    open_label_img_menu(filemenu)
     filemenu.add_command(label="Train Datasets", command=lambda: training_data(notebook, window))
     filemenu.add_command(label="Real-Time Integration", command=donothing)
     filemenu.add_command(label="Extract Output", command=lambda: video(notebook, window))

@@ -1,8 +1,9 @@
-import sys
+# import sys
 from pathlib import Path
-current_dir = Path(__file__).resolve().parent.parent
-ultralytics_main_dir = current_dir
-sys.path.append(str(ultralytics_main_dir))
+# current_dir = Path(__file__).resolve().parent.parent
+# ultralytics_main_dir = current_dir
+# sys.path.append(str(ultralytics_main_dir))
+import root_path
 from ultralytics import YOLO
 from tkinter import filedialog
 from PIL import Image, ImageTk
@@ -557,15 +558,17 @@ class Base:
             load_path_weight = first_record['weight']
             load_confidence_all_scale = first_record['confidence_all']
             load_dataset_format = first_record['dataset_format']
-        return records,load_path_weight,load_item_code,load_confidence_all_scale,load_dataset_format
+            size_model = first_record['size_detection']
+        return records,load_path_weight,load_item_code,load_confidence_all_scale,load_dataset_format,size_model
 
-    def load_parameters_model(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,Frame_2):
+    def load_parameters_model(self,model1,load_path_weight,load_item_code,load_confidence_all_scale,records,load_dataset_format,size_model,Frame_2):
         self.datasets_format_model.delete(0, tk.END)
         self.datasets_format_model.insert(0, load_dataset_format)
         self.weights.delete(0, tk.END)
         self.weights.insert(0, load_path_weight)
         self.item_code.delete(0, tk.END)
         self.item_code.insert(0, load_item_code)
+        self.size_model.set(size_model)
         self.scale_conf_all.set(load_confidence_all_scale)
         try:
             if load_dataset_format == 'HBB':
