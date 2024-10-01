@@ -111,7 +111,7 @@ class Training_Data(Base):
 
         ttk.Label(datasets_format, text='Dataset Formats:', font=('ubuntu', 12), width=15 ).grid(column=0, row=1, padx=10, pady=5, sticky="w")
 
-        option_datasets_format = ['BASE Dataset Format','OBB Dataset Format']
+        option_datasets_format = ['HBB Format','OBB Format']
         self.datasets_format_model = ttk.Combobox(datasets_format, values=option_datasets_format, width=7)
         self.datasets_format_model.grid(row=1, column=2, columnspan=2,  padx=(0, 10), pady=5, sticky="w", ipadx=40, ipady=2)
 
@@ -390,7 +390,7 @@ class Training_Data(Base):
             self.source_FOLDER_entry.delete(0, tk.END)
             self.source_FOLDER_entry.insert(0, folder_selected)
 
-    def run(self,progress_label):
+    def run_h(self,progress_label):
         if self.source_FOLDER_entry.get() == None or self.source_FOLDER_entry.get() == '' or self.source_CLASS_entry.get() == None or self.source_CLASS_entry.get() == '':
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
@@ -474,7 +474,7 @@ class Training_Data(Base):
 
             self.execute_command(callback)
 
-    def race(self,progress_label):
+    def run_o(self,progress_label):
         if self.source_FOLDER_entry.get() == None or self.source_FOLDER_entry.get() == '' or self.source_CLASS_entry.get() == None or self.source_CLASS_entry.get() == '':
             messagebox.showerror("Error", f"Please choose source folder datasets")
         else:    
@@ -606,19 +606,19 @@ class Training_Data(Base):
                 lines = file.readlines()
                 for line in lines:
                     line = line.strip()
-                    if dataset_format == 'BASE Dataset Format':
+                    if dataset_format == 'HBB Format':
                         if "YOLO_OBB" in line:
                             messagebox.showwarning("Warning", 'Invalid Supported Dataset Formats')
                             return
                         else:
-                            self.run(progress_label)
+                            self.run_h(progress_label)
                             return                      
-                    elif dataset_format == 'OBB Dataset Format':
+                    elif dataset_format == 'OBB Format':
                         if "YOLO_OBB" not in line:
                             messagebox.showwarning("Warning", 'Invalid Supported Dataset Formats')
                             return
                         else:
-                            self.race(progress_label)
+                            self.run_o(progress_label)
                             return
 
 

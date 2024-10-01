@@ -79,7 +79,6 @@ class CameraOperation():
         if False == self.b_open_device:
             # ch:选择设备并创建句柄 | en:Select device and create handle
             nConnectionNum = int(self.n_connect_num)
-            print('nConnectionNum',nConnectionNum)
             stDeviceList = cast(self.st_device_list.pDeviceInfo[int(nConnectionNum)], POINTER(MV_CC_DEVICE_INFO)).contents
             self.obj_cam = MvCamera()
             ret = self.obj_cam.MV_CC_CreateHandle(stDeviceList)
@@ -264,16 +263,16 @@ class CameraOperation():
                     continue
                 cdll.msvcrt.memcpy(byref(img_buff), stConvertParam.pDstBuffer, nConvertSize)
                 numArray = CameraOperation.Color_numpy(self,img_buff,self.st_frame_info.nWidth,self.st_frame_info.nHeight)
-            print(numArray)
+
             #合并OpenCV到Tkinter界面中
-            # current_image = Image.fromarray(numArray).resize((500, 500), Image.ANTIALIAS)
-            # lock.acquire()  #加锁
-            # imgtk = ImageTk.PhotoImage(image=current_image, master=root)
-            # panel.imgtk = imgtk        
-            # panel.config(image=imgtk)
-            # root.obr = imgtk
-            # lock.release() #释放锁
-            # nRet = self.obj_cam.MV_CC_FreeImageBuffer(stOutFrame)
+            current_image = Image.fromarray(numArray).resize((500, 500), Image.ANTIALIAS)
+            lock.acquire()  #加锁
+            imgtk = ImageTk.PhotoImage(image=current_image, master=root)
+            panel.imgtk = imgtk        
+            panel.config(image=imgtk)
+            root.obr = imgtk
+            lock.release() #释放锁
+            nRet = self.obj_cam.MV_CC_FreeImageBuffer(stOutFrame)
             if self.b_exit == True:
                 if img_buff is not None:
                     del img_buff
